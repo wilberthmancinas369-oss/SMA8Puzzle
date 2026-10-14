@@ -13,6 +13,18 @@ public class Razonamiento {
 
     public static final int[] META = {1, 2, 3, 4, 5, 6, 7, 8, 0};
 
+    /**
+     * Casillas vecinas de cada posición del tablero:
+     *  0 | 1 | 2     esquina (0, 2, 6, 8) -> 2 movimientos
+     *  3 | 4 | 5     arista  (1, 3, 5, 7) -> 3 movimientos
+     *  6 | 7 | 8     centro  (4)          -> 4 movimientos
+     */
+    public static final int[][] VECINOS = {
+            {1, 3},       {0, 2, 4},    {1, 5},
+            {0, 4, 6},    {1, 3, 5, 7}, {2, 4, 8},
+            {3, 7},       {4, 6, 8},    {5, 7}
+    };
+
     private final Random rnd = new Random();
 
     /**
@@ -38,6 +50,33 @@ public class Razonamiento {
             tablero[j] = tmp;
         }
         return tablero;
+    }
+
+    /**
+     * Intenta mover la ficha de la posición 'casilla' hacia el hueco.
+     * Solo es posible si la casilla es vecina del hueco.
+     * @return el tablero nuevo, o null si esa ficha no se puede mover
+     */
+    public static int[] mover(int[] tablero, int casilla) {
+        int hueco = posicionHueco(tablero);
+        for (int vecino : VECINOS[hueco]) {
+            if (vecino == casilla) {
+                int[] nuevo = tablero.clone();
+                nuevo[hueco] = nuevo[casilla];
+                nuevo[casilla] = 0;
+                return nuevo;
+            }
+        }
+        return null;
+    }
+
+    public static int posicionHueco(int[] tablero) {
+        for (int i = 0; i < tablero.length; i++) {
+            if (tablero[i] == 0) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException("El tablero no tiene hueco");
     }
 
     /**
