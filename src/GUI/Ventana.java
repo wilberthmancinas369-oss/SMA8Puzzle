@@ -3,7 +3,9 @@ package GUI;
 import GUI.styles.TexturaMadera;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
 import javafx.animation.ParallelTransition;
+import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -30,6 +32,9 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.List;
 import java.util.Random;
 import java.util.function.IntConsumer;
 
@@ -48,6 +53,7 @@ public class Ventana {
 
     private static final Duration DURACION_MOVER = Duration.millis(170);
     private static final Duration DURACION_REVOLVER = Duration.millis(380);
+    private static final Duration PASO_SOLUCION = Duration.millis(250); // ritmo visible de la solución
 
     private static final String FUENTE = elegirFuente();
 
@@ -58,6 +64,8 @@ public class Ventana {
     private Runnable alTerminar;                         // deja las fichas en su lugar final
     private boolean animando = false;
     private boolean primerTablero = true;
+    private Timeline solucion;                           // solución reproduciéndose (o null)
+    private final Deque<Runnable> solucionesPendientes = new ArrayDeque<>();
 
     public Ventana(Runnable onComenzar, Runnable onResolver, IntConsumer onCasilla, Runnable onCerrar) {
         Pane piezas = new Pane();
@@ -69,7 +77,7 @@ public class Ventana {
             StackPane ficha = crearFicha(n, azar);
             int numero = n;
             ficha.setOnMouseClicked(e -> {
-                if (!animando) {
+                if (!animando && solucion == null) {
                     onCasilla.accept(posicion[numero]); // avisa qué casilla se tocó
                 }
             });
@@ -109,8 +117,52 @@ public class Ventana {
     /**
      * Coloca las fichas según el tablero (arreglo de 9 enteros por filas, 0 = espacio vacío).
      * La primera vez aparecen directo; después se deslizan a su nuevo lugar, como al revolver.
+     * Cancela cualquier solución que se esté reproduciendo.
      */
     public void mostrarTablero(int[] tablero) {
+        cancelarSoluciones();
+        colocar(tablero);
+    }
+
+    /**
+     * Reproduce una solución: vuelve al tablero inicial y aplica cada movimiento {desde, hacia}
+     * a ritmo visible. Si ya hay otra reproduciéndose, esta espera su turno.
+     */
+    public void reproducirSolucion(int[] inicial, List<int[]> movimientos, Runnable alFinal) {
+        Runnable reproducir = () -> {
+            colocar(inicial);
+            solucion = new Timeline();
+            Duration t = DURACION_REVOLVER.add(PASO_SOLUCION); // primero deja que se acomode el inicial
+            for (int[] m : movimientos) {
+                solucion.getKeyFrames().add(new KeyFrame(t, e -> animarMovimiento(m[0], m[1])));
+                t = t.add(PASO_SOLUCION);
+            }
+            solucion.getKeyFrames().add(new KeyFrame(t, e -> {
+                solucion = null;
+                alFinal.run();
+                Runnable siguiente = solucionesPendientes.poll();
+                if (siguiente != null) {
+                    siguiente.run();
+                }
+            }));
+            solucion.play();
+        };
+        if (solucion == null) {
+            reproducir.run();
+        } else {
+            solucionesPendientes.add(reproducir);
+        }
+    }
+
+    private void cancelarSoluciones() {
+        solucionesPendientes.clear();
+        if (solucion != null) {
+            solucion.stop();
+            solucion = null;
+        }
+    }
+
+    private void colocar(int[] tablero) {
         detenerAnimacion();
         ParallelTransition revolver = new ParallelTransition();
         for (int casilla = 0; casilla < tablero.length; casilla++) {

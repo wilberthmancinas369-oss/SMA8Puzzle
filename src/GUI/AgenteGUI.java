@@ -1,8 +1,12 @@
 package GUI;
 
+import jade.core.behaviours.CyclicBehaviour;
 import jade.gui.GuiAgent;
 import jade.gui.GuiEvent;
+import jade.lang.acl.ACLMessage;
 import javafx.application.Platform;
+
+import java.util.List;
 
 /**
  * Agente GUI: recibe el puzzle del usuario (o propone uno aleatorio),
@@ -23,12 +27,15 @@ public class AgenteGUI extends GuiAgent {
     private Actuacion actuacion;
     private Ventana ventana;
     private int[] tableroActual;
+    private int[] tableroResuelto;  // el tablero que se mandó a resolver
+    private long inicioResolver;    // System.nanoTime() al presionar "Resolver"
 
     @Override
     protected void setup() {
         actuacion = new Actuacion(getLocalName());
         tableroActual = razonamiento.generarTableroAleatorio();
         abrirVentana();
+        addBehaviour(new EscucharSolucionadores());
     }
 
     private void abrirVentana() {
@@ -64,8 +71,42 @@ public class AgenteGUI extends GuiAgent {
     }
 
     private void resolver() {
+        // RAZONAMIENTO: recordar qué tablero se va a resolver y desde cuándo
+        tableroResuelto = tableroActual.clone();
+        inicioResolver = System.nanoTime();
+
         // ACTUACIÓN: entregar el tablero actual al generador (él lo evalúa)
         actuacion.enviarPuzzle(this, tableroActual);
+    }
+
+    /** Resultados que mandan los solucionadores al llegar a la meta. */
+    private class EscucharSolucionadores extends CyclicBehaviour {
+        @Override
+        public void action() {
+            // PERCEPCIÓN: un INFORM con el camino de algún solucionador
+            ACLMessage msg = percepcion.percibir(myAgent);
+            if (msg == null) {
+                block();
+                return;
+            }
+            Percepcion.Resultado resultado = percepcion.leerResultado(msg);
+            if (resultado == null || tableroResuelto == null) {
+                return; // AGREE/REFUSE del generador u otro mensaje
+            }
+
+            // RAZONAMIENTO: tiempo real de resolución y movimientos a animar
+            long tiempoMs = (System.nanoTime() - inicioResolver) / 1_000_000;
+            List<int[]> movimientos = Razonamiento.movimientos(tableroResuelto, resultado.camino());
+            if (movimientos == null) {
+                return; // el camino tiene pasos ilegales
+            }
+            tableroActual = Razonamiento.META.clone(); // así queda el tablero al terminar
+
+            // ACTUACIÓN: animar la solución y al final imprimir el resumen
+            actuacion.reproducirSolucion(tableroResuelto, movimientos,
+                    resultado.solucionador() + " (" + resultado.heuristica() + "): "
+                            + movimientos.size() + " movimientos, " + tiempoMs + " ms");
+        }
     }
 
     private void comenzar() {

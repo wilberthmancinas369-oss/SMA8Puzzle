@@ -1,5 +1,8 @@
 package GUI;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -68,6 +71,29 @@ public class Razonamiento {
             }
         }
         return null;
+    }
+
+    /**
+     * Convierte un camino de estados en movimientos {desde, hacia} a partir del tablero inicial.
+     * En cada paso, la ficha que se movió estaba donde ahora quedó el hueco.
+     * @return los movimientos, o null si algún paso no es un movimiento legal
+     */
+    public static List<int[]> movimientos(int[] inicial, List<int[]> camino) {
+        List<int[]> movimientos = new ArrayList<>();
+        int[] actual = inicial;
+        for (int[] siguiente : camino) {
+            if (Arrays.equals(siguiente, actual)) {
+                continue; // por si el camino incluye el estado inicial
+            }
+            int desde = posicionHueco(siguiente);
+            int hacia = posicionHueco(actual);
+            if (!Arrays.equals(mover(actual, desde), siguiente)) {
+                return null;
+            }
+            movimientos.add(new int[]{desde, hacia});
+            actual = siguiente;
+        }
+        return movimientos;
     }
 
     public static int posicionHueco(int[] tablero) {

@@ -7,6 +7,7 @@ import jade.lang.acl.ACLMessage;
 import javafx.application.Platform;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Actuación del Agente GUI: lo que el agente hace hacia afuera.
@@ -37,6 +38,17 @@ public class Actuacion {
         imprimirTablero(tableroNuevo);
         if (ventana != null) {
             Platform.runLater(() -> ventana.animarMovimiento(desde, hacia));
+        }
+    }
+
+    /**
+     * Anima la solución paso a paso (a ritmo visible) desde el tablero inicial
+     * y, al terminar la animación, imprime el resumen en la terminal.
+     */
+    public void reproducirSolucion(int[] inicial, List<int[]> movimientos, String resumen) {
+        if (ventana != null) {
+            Platform.runLater(() -> ventana.reproducirSolucion(inicial, movimientos,
+                    () -> System.out.println(resumen)));
         }
     }
 
