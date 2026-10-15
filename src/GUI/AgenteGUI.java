@@ -16,6 +16,7 @@ public class AgenteGUI extends GuiAgent {
 
     static final int EVENTO_COMENZAR = 1;
     static final int EVENTO_CASILLA = 2;
+    static final int EVENTO_RESOLVER = 3;
 
     private final Percepcion percepcion = new Percepcion();
     private final Razonamiento razonamiento = new Razonamiento();
@@ -34,6 +35,7 @@ public class AgenteGUI extends GuiAgent {
         Runnable crear = () -> {
             ventana = new Ventana(
                     () -> postGuiEvent(new GuiEvent(this, EVENTO_COMENZAR)), // botón -> agente
+                    () -> postGuiEvent(new GuiEvent(this, EVENTO_RESOLVER)), // botón -> agente
                     casilla -> {                                              // casilla -> agente
                         GuiEvent evento = new GuiEvent(this, EVENTO_CASILLA);
                         evento.addParameter(casilla);
@@ -53,11 +55,17 @@ public class AgenteGUI extends GuiAgent {
 
     @Override
     protected void onGuiEvent(GuiEvent evento) {
-        // PERCEPCIÓN: el usuario presionó "Comenzar" o tocó una casilla
+        // PERCEPCIÓN: el usuario presionó "Comenzar", "Resolver" o tocó una casilla
         switch (evento.getType()) {
             case EVENTO_COMENZAR -> comenzar();
+            case EVENTO_RESOLVER -> resolver();
             case EVENTO_CASILLA -> tocarCasilla((Integer) evento.getParameter(0));
         }
+    }
+
+    private void resolver() {
+        // ACTUACIÓN: entregar el tablero actual al generador (él lo evalúa)
+        actuacion.enviarPuzzle(this, tableroActual);
     }
 
     private void comenzar() {

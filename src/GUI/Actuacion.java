@@ -1,11 +1,16 @@
 package GUI;
 
+import AgenteGenerador.AgenteGenerador;
+import jade.core.AID;
+import jade.core.Agent;
+import jade.lang.acl.ACLMessage;
 import javafx.application.Platform;
+
+import java.io.IOException;
 
 /**
  * Actuación del Agente GUI: lo que el agente hace hacia afuera.
- * Por ahora: mostrar el tablero en la ventana y en la terminal.
- * Pendiente: enviar el puzzle al generador (REQUEST).
+ * Mostrar el tablero en la ventana y en la terminal, y enviar el puzzle al generador.
  */
 public class Actuacion {
 
@@ -32,6 +37,18 @@ public class Actuacion {
         imprimirTablero(tableroNuevo);
         if (ventana != null) {
             Platform.runLater(() -> ventana.animarMovimiento(desde, hacia));
+        }
+    }
+
+    /** REQUEST al generador con el tablero (int[9]) como puzzle inicial. */
+    public void enviarPuzzle(Agent agente, int[] tablero) {
+        ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+        msg.addReceiver(new AID(AgenteGenerador.NOMBRE, AID.ISLOCALNAME));
+        try {
+            msg.setContentObject(tablero.clone());
+            agente.send(msg);
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudo empaquetar el tablero", e);
         }
     }
 
