@@ -90,3 +90,71 @@ sequenceDiagram
 4. Ejecutar la configuración **JADE Plataforma** (`jade.Boot -gui`).
 
 > Si sale `No ICP active`, ya hay otra plataforma JADE usando el puerto 1099: ciérrala primero.
+
+## Ejecutar en varias computadoras (JADE en red)
+
+Es **una sola plataforma JADE repartida en varias computadoras**:
+- **Principal**: la computadora con la GUI y el generador (abre la ventana de JADE).
+- **Contenedores**: cada integrante se **une** a esa plataforma con su solucionador. Los agentes se encuentran por su nombre, igual que en una sola computadora.
+
+### Requisitos de cada solucionador
+1. **Nombre exacto**: `solucionador1`, `solucionador2` o `solucionador3` (el generador les manda los mensajes con esos nombres; no puede haber dos iguales).
+2. **Seguir el contrato de mensajes**:
+   - Recibe `INFORM` del `generador` con `int[][]` (vecinos): `(int[][]) msg.getContentObject()`.
+   - El primer mensaje (sin `in-reply-to`) es un puzzle nuevo.
+   - Pide vecinos con `REQUEST` al `generador` y el nodo elegido como `int[]` (`setContentObject`).
+   - Reporta a la `gui` con `INFORM`: `heuristica=...;camino=...;expandidos=...;tiempoMs=...`
+3. **El mismo `jade.jar` (4.6.0)** que el proyecto.
+
+### Paso 1: misma red
+- Todos en la misma red Wi-Fi (**UABC funcionó**; si falla, usar el hotspot de un celular).
+- Cada quien obtiene su IP: Linux `ip -4 addr` · Windows `ipconfig` → **Dirección IPv4**.
+- La IP puede cambiar de un día a otro: revisarla antes de cada prueba.
+
+### Paso 2: computadora principal
+*Main class* `jade.Boot`, *Program arguments*:
+```
+-gui -nomtp -local-host IP_PRINCIPAL -local-port 1099 -agents "gui:GUI.AgenteGUI;generador:AgenteGenerador.AgenteGenerador"
+```
+- `-local-host` es **obligatorio en Ubuntu**: sin él, JADE anuncia `127.0.1.1` y nadie se puede unir.
+- `-nomtp` apaga el puerto 7778, que no se usa.
+- Si el firewall `ufw` está activo: `sudo ufw allow from IP_COMPAÑERO to any port 1099 proto tcp`.
+
+### Paso 3: computadora de cada solucionador
+*Main class* `jade.Boot`, *Program arguments*:
+```
+-container -host IP_PRINCIPAL -port 1099 -local-host IP_DEL_COMPAÑERO -local-port 1100 -agents "solucionadorN:Paquete.ClaseDelAgente"
+```
+Ejemplo (solucionador 3):
+```
+-container -host 10.21.26.144 -port 1099 -local-host 10.21.40.37 -local-port 1100 -agents "solucionador3:AgenteEuclidiano.AgenteEuclidiano"
+```
+- `-container`: se une a la plataforma principal en lugar de crear otra.
+- **Sin `-gui`**: la ventana de JADE solo la abre la principal.
+- Si dos solucionadores corren en la **misma** computadora, cada uno usa otro `-local-port` (1100, 1101...).
+
+### Paso 4: firewall de Windows (en cada solucionador)
+La principal se conecta al **puerto 1100** del compañero para entregarle mensajes. En **PowerShell como administrador** (clic derecho → *Ejecutar como administrador*):
+```powershell
+New-NetFirewallRule -DisplayName "JADE 1100" -Direction Inbound -Protocol TCP -LocalPort 1100 -RemoteAddress IP_PRINCIPAL -Action Allow -Profile Any
+```
+Al terminar la demo:
+```powershell
+Remove-NetFirewallRule -DisplayName "JADE 1100"
+```
+
+### Paso 5: orden de arranque
+1. La **principal** arranca y espera a que aparezca la ventana de JADE.
+2. Cada **solucionador** arranca su contenedor. En su consola: `Agent container Container-N@SU_IP is ready.`
+3. En la ventana de JADE aparece un **Container-N** por compañero, con su solucionador adentro.
+4. Presionar **Resolver**: la terminal de la principal se llena de vecinos (las peticiones de los solucionadores).
+
+### Errores frecuentes
+| Error | Causa | Solución |
+|---|---|---|
+| La principal corre sin `-local-host` | IntelliJ no mostraba la configuración nueva | *File → Reload All from Disk* o reabrir el proyecto |
+| `Can't get a proxy to the Platform Manager ... Permission denied` | El contenedor arrancó antes de que la principal estuviera lista | Arrancar primero la principal y esperar la ventana de JADE |
+| `Acceso denegado` en `New-NetFirewallRule` | PowerShell sin permisos de administrador | *Ejecutar como administrador* |
+| Container-N aparece, pero el solucionador no recibe nada | El firewall de Windows bloquea el puerto 1100 | Paso 4 |
+| Tailscale no conecta en la universidad | El firewall Fortinet de UABC lo bloquea | Usar la red UABC directamente o el hotspot |
+| En el hotspot, la laptop se regresa sola a UABC | El hotspot no tiene internet (datos apagados) | Elegir el hotspot manualmente |
