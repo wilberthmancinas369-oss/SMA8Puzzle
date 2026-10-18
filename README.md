@@ -36,7 +36,8 @@ Sistema Multiagente en **JADE** que resuelve el **8-Puzzle**. Los agentes se com
 | Nodos siguientes | Generador → Solucionador | `INFORM` | 2, 3 o 4 estados (`int[9]` cada uno) |
 | Nodo elegido | Solucionador → Generador | `REQUEST` | estado elegido (`int[9]`) |
 | Fin de la búsqueda | Generador → Solucionador | `INFORM` | `"meta alcanzada"` |
-| Resultado | Solucionador → GUI | `INFORM` | heurística, camino, nodos expandidos, tiempo |
+| Puzzle a animar | Generador → GUI de cada solucionador (`gui1`, `gui2`, `gui3`) | `INFORM` | estado inicial (`int[9]`) |
+| Resultado | Solucionador → `gui` **y** su `guiN` | `INFORM` | `heuristica=...;camino=...;expandidos=...;tiempoMs=...` |
 | Exploración | Generador → GUI | `INFORM` | subgrafo explorado por cada heurística |
 
 > **Importante para los solucionadores:** el nodo elegido debe ser el mejor de **toda** su lista abierta (todos los nodos recibidos y aún no expandidos), no solo de los 2–4 que acaban de llegar. Si no, el algoritmo se convierte en *hill climbing* y puede atorarse sin llegar a la meta.
@@ -90,3 +91,37 @@ sequenceDiagram
 4. Ejecutar la configuración **JADE Plataforma** (`jade.Boot -gui`).
 
 > Si sale `No ICP active`, ya hay otra plataforma JADE usando el puerto 1099: ciérrala primero.
+
+## GUI de cada solucionador (esta rama)
+
+Cada integrante corre, junto a su solucionador, su propia GUI (`GUISolucionador.AgenteGUISolucionador`). Esa GUI:
+1. Muestra el puzzle en cuanto se presiona **Resolver** en la GUI principal (se lo manda el generador).
+2. Cuando llega el resultado de su solucionador, **anima la solución paso a paso** (0.25 s por movimiento).
+3. Al terminar, muestra e imprime: `heurística: N movimientos · E expandidos · T ms`.
+
+La GUI principal (`gui`) oculta el tablero, espera a los 3 solucionadores y luego **compara** movimientos, nodos expandidos y tiempo.
+
+### Qué copiar a tu proyecto
+- La carpeta `src/GUISolucionador/` completa (incluye `styles/`).
+- Las librerías de JavaFX de `lib/` (`javafx-base`, `javafx-graphics`, `javafx-controls`): vienen las de **Windows (`-win`)** y **Linux (`-linux`)**. Agrégalas como librería en *File → Project Structure → Libraries*.
+
+### Nombre de la GUI
+Usa el mismo número que tu solucionador: `solucionador1` → `gui1`, `solucionador2` → `gui2`, `solucionador3` → `gui3`.
+
+### Cambio en tu solucionador
+Al reportar el resultado, agrega tu GUI como segundo destinatario:
+```java
+ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+msg.addReceiver(new AID("gui", AID.ISLOCALNAME));   // comparación (GUI principal)
+msg.addReceiver(new AID("gui3", AID.ISLOCALNAME));  // tu GUI: anima la solución
+msg.setContent("heuristica=euclidiana;camino=...;expandidos=...;tiempoMs=...");
+```
+- `camino`: los estados desde el primer movimiento hasta la meta, separados con `>` (ej. `[1, 2, 3, 4, 5, 6, 7, 0, 8]>[1, 2, 3, 4, 5, 6, 7, 8, 0]`).
+- `tiempoMs`: el tiempo que midió **tu** solucionador; es el que se compara.
+
+### Cómo ejecutarlo
+- **Probar sola tu GUI**: configuración **JADE GUI Solucionador** (`-gui -agents "gui3:GUISolucionador.AgenteGUISolucionador"`). Aparece el tablero con "Esperando puzzle…".
+- **En red** (ver *Ejecutar en varias computadoras* en la rama `AgenteGUI`): agrega tu GUI a la línea `-agents` de tu contenedor:
+```
+-container -host IP_PRINCIPAL -port 1099 -local-host TU_IP -local-port 1100 -agents "solucionador3:AgenteEuclidiano.AgenteEuclidiano;gui3:GUISolucionador.AgenteGUISolucionador"
+```
