@@ -2,7 +2,7 @@
   <configuration default="false" name="JADE Plataforma" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="jade.Boot" />
     <module name="SMA8Puzzle" />
-    <option name="PROGRAM_PARAMETERS" value="-gui" />
+    <option name="PROGRAM_PARAMETERS" value="-gui -agents &quot;gui:GUI.AgenteGUI;generador:AgenteGenerador.AgenteGenerador&quot;" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

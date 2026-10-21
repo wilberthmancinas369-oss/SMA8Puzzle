@@ -1,0 +1,91 @@
+/* Estilo "puzzle de madera" para la ventana del Agente GUI */
+
+.mesa {
+    -fx-background-color: radial-gradient(center 50% 35%, radius 85%, #5a3a22 0%, #2e1c0f 60%, #1c1008 100%);
+    -fx-padding: 28 36 30 36;
+}
+
+.subtitulo {
+    -fx-text-fill: #c9a274;
+    -fx-font-size: 13px;
+    -fx-font-style: italic;
+}
+
+.mensaje {
+    -fx-text-fill: #dcc29a;
+    -fx-font-size: 13px;
+}
+
+/* ---------- Botones de madera ---------- */
+
+.boton-madera {
+    -fx-background-color:
+            #2a160a,
+            linear-gradient(to bottom, #9a6738 0%, #7a4c27 50%, #5e3a1c 100%);
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 10, 9;
+    -fx-text-fill: #f8e7c8;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 28 10 28;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.55), 10, 0.2, 0, 3);
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.boton-madera:hover {
+    -fx-background-color:
+            #2a160a,
+            linear-gradient(to bottom, #ad7743 0%, #8a5830 50%, #6b4322 100%);
+}
+
+.boton-madera:pressed {
+    -fx-background-color:
+            #2a160a,
+            linear-gradient(to bottom, #5e3a1c 0%, #7a4c27 100%);
+    -fx-translate-y: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 4, 0.2, 0, 1);
+}
+
+/* "Resolver": acento de latón */
+.boton-laton {
+    -fx-background-color:
+            #4a3010,
+            linear-gradient(to bottom, #f0cf86 0%, #d4a54f 45%, #a8772a 100%);
+    -fx-text-fill: #3a2210;
+}
+
+.boton-laton:hover {
+    -fx-background-color:
+            #4a3010,
+            linear-gradient(to bottom, #f7dc9c 0%, #dfb35f 45%, #b98733 100%);
+}
+
+.boton-laton:pressed {
+    -fx-background-color:
+            #4a3010,
+            linear-gradient(to bottom, #a8772a 0%, #d4a54f 100%);
+}
+
+/* ---------- Espera y comparación ---------- */
+
+.anillo {
+    -fx-progress-color: #d4a54f;
+}
+
+.grupo {
+    -fx-text-fill: #e8c98f;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.nombre {
+    -fx-text-fill: #dcc29a;
+    -fx-font-size: 12px;
+}
+
+.valor {
+    -fx-text-fill: #f3e2c3;
+    -fx-font-size: 12px;
+}
