@@ -117,7 +117,13 @@ msg.addReceiver(new AID("gui3", AID.ISLOCALNAME));  // tu GUI: anima la solució
 msg.setContent("heuristica=euclidiana;camino=...;expandidos=...;tiempoMs=...");
 ```
 - `camino`: los estados desde el primer movimiento hasta la meta, separados con `>` (ej. `[1, 2, 3, 4, 5, 6, 7, 0, 8]>[1, 2, 3, 4, 5, 6, 7, 8, 0]`).
-- `tiempoMs`: el tiempo que midió **tu** solucionador; es el que se compara.
+- `tiempoMs`: **tiempo de procesador** de tu solucionador, en milisegundos (puede llevar decimales, ej. `37.354`). Suma solo lo que tarda cada turno (percibir, razonar y actuar); **no** cuenta la espera de los vecinos del generador ni los `println`. Así la red no afecta la comparación:
+```java
+long inicio = System.nanoTime();               // al recibir los vecinos
+// ... razonar y pedir el siguiente nodo ...
+nanosProceso += System.nanoTime() - inicio;     // antes de imprimir
+// al llegar a la meta: tiempoMs = nanosProceso / 1_000_000.0
+```
 
 ### Cómo ejecutarlo
 - **Probar sola tu GUI**: configuración **JADE GUI Solucionador** (`-gui -agents "gui3:GUISolucionador.AgenteGUISolucionador"`). Aparece el tablero con "Esperando puzzle…".
