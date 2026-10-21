@@ -108,6 +108,13 @@ La GUI principal (`gui`) oculta el tablero, espera a los 3 solucionadores y lueg
 ### Nombre de la GUI
 Usa el mismo número que tu solucionador: `solucionador1` → `gui1`, `solucionador2` → `gui2`, `solucionador3` → `gui3`.
 
+Entre paréntesis va el nombre que muestra la ventana (si no se pone, muestra `guiN`):
+```
+gui1:GUISolucionador.AgenteGUISolucionador(Manhattan)
+gui3:GUISolucionador.AgenteGUISolucionador(Euclidiana)
+```
+Puede llevar espacios sin comillas: `(Fichas fuera de lugar)`. No uses comas: separan argumentos.
+
 ### Cambio en tu solucionador
 Al reportar el resultado, agrega tu GUI como segundo destinatario:
 ```java
@@ -126,8 +133,8 @@ nanosProceso += System.nanoTime() - inicio;     // antes de imprimir
 ```
 
 ### Cómo ejecutarlo
-- **Probar sola tu GUI**: configuración **JADE GUI Solucionador** (`-gui -agents "gui3:GUISolucionador.AgenteGUISolucionador"`). Aparece el tablero con "Esperando puzzle…".
+- **Probar sola tu GUI**: configuración **JADE GUI Solucionador** (`-gui -agents "gui3:GUISolucionador.AgenteGUISolucionador(Euclidiana)"`). Aparece el tablero con "Esperando puzzle…".
 - **En red** (ver *Ejecutar en varias computadoras* en la rama `AgenteGUI`): agrega tu GUI a la línea `-agents` de tu contenedor:
 ```
--container -host IP_PRINCIPAL -port 1099 -local-host TU_IP -local-port 1100 -agents "solucionador3:AgenteEuclidiano.AgenteEuclidiano;gui3:GUISolucionador.AgenteGUISolucionador"
+-container -host IP_PRINCIPAL -port 1099 -local-host TU_IP -local-port 1100 -agents "solucionador3:AgenteEuclidiano.AgenteEuclidiano;gui3:GUISolucionador.AgenteGUISolucionador(Euclidiana)"
 ```

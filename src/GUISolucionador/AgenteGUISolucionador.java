@@ -11,7 +11,8 @@ import java.util.List;
  * GUI de un solucionador: muestra el puzzle que se está resolviendo
  * y anima, paso a paso, la solución que encontró su heurística.
  *
- * Se lanza con el nombre gui1, gui2 o gui3 (el mismo número que su solucionador).
+ * Se lanza con el nombre gui1, gui2 o gui3 (el mismo número que su solucionador)
+ * y, entre paréntesis, el nombre que se muestra en la ventana: gui3:...(Euclidiana).
  * No envía nada: solo percibe dos mensajes.
  *  - INFORM del generador con el puzzle (int[9])           -> lo muestra y espera
  *  - INFORM del solucionador con el camino a la meta (texto) -> lo anima
@@ -33,7 +34,9 @@ public class AgenteGUISolucionador extends Agent {
 
     private void abrirVentana() {
         Runnable crear = () -> {
-            ventana = new Ventana(getLocalName(), this::doDelete); // cerrar -> terminar agente
+            Object[] args = getArguments(); // lo que va entre paréntesis en -agents, ej. gui3:...(Euclidiana)
+            String titulo = args != null && args.length > 0 ? args[0].toString() : getLocalName();
+            ventana = new Ventana(titulo, this::doDelete); // cerrar -> terminar agente
             actuacion.setVentana(ventana);
             ventana.mostrar();
             actuacion.esperarPuzzle();
