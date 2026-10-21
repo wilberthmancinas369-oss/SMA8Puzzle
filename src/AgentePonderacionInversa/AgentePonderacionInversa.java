@@ -1,4 +1,4 @@
-package AgenteEuclidiano;
+package AgentePonderacionInversa;
 
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -7,14 +7,13 @@ import jade.lang.acl.ACLMessage;
 import java.util.List;
 
 /**
- * Solucionador 3: Greedy Best-First Search con la heurística euclidiana.
- * Se lanza con el nombre "solucionador3" (así lo busca el generador).
+ * Solucionador 1: Greedy Best-First Search con la heurística de ponderacion inversa.
+ * Se lanza con el nombre "solucionador1" (así lo busca el generador).
  */
-public class AgenteEuclidiano extends Agent {
-
+public class AgentePonderacionInversa extends Agent {
     static final String GENERADOR = "generador";
     static final String GUI = "gui";              // GUI principal: compara a los 3 solucionadores
-    static final String GUI_SOLUCIONADOR = "gui3"; // su propia GUI: anima la solución
+    static final String GUI_SOLUCIONADOR = "gui1"; // su propia GUI: anima la solución
 
     private final Percepcion percepcion = new Percepcion();
     private final Razonamiento razonamiento = new Razonamiento();
@@ -70,7 +69,7 @@ public class AgenteEuclidiano extends Agent {
                     if (nuevo) {
                         actuacion.imprimirInicio();
                     }
-                    actuacion.imprimirAvance(razonamiento.getExpandidos(), elegido, razonamiento.euclidiana(elegido));
+                    actuacion.imprimirAvance(razonamiento.getExpandidos(), elegido, razonamiento.ponderacionInversa(elegido));
                 }
             }
         });

@@ -1,4 +1,4 @@
-package AgenteEuclidiano;
+package AgentePonderacionInversa;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -16,9 +16,9 @@ import java.util.Locale;
 public class Actuacion {
 
     private final Agent agente;
-    private final AID generador = new AID(AgenteEuclidiano.GENERADOR, AID.ISLOCALNAME);
-    private final AID gui = new AID(AgenteEuclidiano.GUI, AID.ISLOCALNAME);
-    private final AID guiSolucionador = new AID(AgenteEuclidiano.GUI_SOLUCIONADOR, AID.ISLOCALNAME);
+    private final AID generador = new AID(AgentePonderacionInversa.GENERADOR, AID.ISLOCALNAME);
+    private final AID gui = new AID(AgentePonderacionInversa.GUI, AID.ISLOCALNAME);
+    private final AID guiSolucionador = new AID(AgentePonderacionInversa.GUI_SOLUCIONADOR, AID.ISLOCALNAME);
     private int pedidos = 0; // identifica cada REQUEST para reconocer su respuesta
 
     public Actuacion(Agent agente) {

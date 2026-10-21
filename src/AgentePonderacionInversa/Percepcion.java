@@ -1,4 +1,4 @@
-package AgenteEuclidiano;
+package AgentePonderacionInversa;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -11,7 +11,7 @@ public class Percepcion {
 
     private final MessageTemplate plantilla = MessageTemplate.and(
             MessageTemplate.MatchPerformative(ACLMessage.INFORM),
-            MessageTemplate.MatchSender(new AID(AgenteEuclidiano.GENERADOR, AID.ISLOCALNAME)));
+            MessageTemplate.MatchSender(new AID(AgentePonderacionInversa.GENERADOR, AID.ISLOCALNAME)));
 
     public ACLMessage percibir(Agent agente) {
         return agente.receive(plantilla);

@@ -1,4 +1,4 @@
-package AgenteEuclidiano;
+package AgentePonderacionInversa;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +20,7 @@ public class Razonamiento {
     public static final int[] META = {1, 2, 3, 4, 5, 6, 7, 8, 0};
 
     private final int[] posMeta = new int[9]; // posMeta[ficha] = casilla de esa ficha en la meta
-    private final PriorityQueue<int[]> abierta = new PriorityQueue<>(Comparator.comparingDouble(this::euclidiana));
+    private final PriorityQueue<int[]> abierta = new PriorityQueue<>(Comparator.comparingDouble(this::ponderacionInversa));
     private final Set<String> visitados = new HashSet<>();
     private final Map<String, int[]> padre = new HashMap<>(); // para reconstruir el camino
     private int[] actual;
@@ -80,19 +80,21 @@ public class Razonamiento {
         return ruta;
     }
 
-    /** h(n): suma de las distancias en línea recta de cada ficha a su casilla meta. */
-    public double euclidiana(int[] estado) {
+    /** Calculo de heuristica */
+    public double ponderacionInversa(int[] estado) {
         double total = 0;
         for (int i = 0; i < 9; i++) {
-            int ficha = estado[i];
-            if (ficha == 0) {
-                continue;
+            int ficha = estado[i] == 0 ? 9 : estado[i];
+
+            for (int j = i + 1; j < 9; j++) {
+                int fichaJ = estado[j] == 0 ? 9 : estado[j];
+
+                if (fichaJ > ficha) continue;
+
+                total += ficha - fichaJ;
             }
-            int j = posMeta[ficha];
-            int dx = j % 3 - i % 3;
-            int dy = j / 3 - i / 3;
-            total += Math.sqrt(dx * dx + dy * dy);
         }
+
         return total;
     }
 
