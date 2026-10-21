@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Actuación del solucionador: pedir vecinos al generador e informar el resultado a las GUIs.
@@ -43,7 +44,7 @@ public class Actuacion {
     }
 
     /** INFORM (camino, nodos expandidos, tiempo) -> GUI principal y GUI del solucionador. */
-    public void informarResultado(List<int[]> camino, int expandidos, long tiempoMs) {
+    public void informarResultado(List<int[]> camino, int expandidos, double tiempoMs) {
         List<String> pasos = new ArrayList<>();
         for (int[] e : camino) {
             pasos.add(Arrays.toString(e));
@@ -52,8 +53,31 @@ public class Actuacion {
         msg.addReceiver(gui);
         msg.addReceiver(guiSolucionador);
         msg.setContent("heuristica=euclidiana;camino=" + String.join(">", pasos)
-                + ";expandidos=" + expandidos + ";tiempoMs=" + tiempoMs);
+                + ";expandidos=" + expandidos + ";tiempoMs=" + String.format(Locale.ROOT, "%.3f", tiempoMs));
         agente.send(msg);
+    }
+
+    // ===================== Depuración (pocas líneas) =====================
+
+    public void imprimirInicio() {
+        System.out.println("\n===== NUEVO PUZZLE: buscando con la heurística euclidiana =====");
+    }
+
+    /** Solo los 3 primeros nodos elegidos y luego uno cada 100, para no llenar la terminal. */
+    public void imprimirAvance(int expandidos, int[] elegido, double h) {
+        if (expandidos <= 3 || expandidos % 100 == 0) {
+            System.out.println("  #" + expandidos + " elegido " + Arrays.toString(elegido)
+                    + "  h = " + String.format(Locale.ROOT, "%.2f", h));
+        }
+    }
+
+    public void imprimirMeta(int movimientos, int expandidos, double tiempoMs) {
+        System.out.println("META ALCANZADA: " + movimientos + " movimientos, " + expandidos + " expandidos, "
+                + String.format(Locale.ROOT, "%.3f", tiempoMs) + " ms de procesador");
+    }
+
+    public void imprimirSinSolucion() {
+        System.out.println("Frontera vacía: sin solución.");
     }
 
     private String idPedido(int n) {

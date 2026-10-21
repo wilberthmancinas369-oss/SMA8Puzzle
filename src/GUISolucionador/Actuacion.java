@@ -3,6 +3,7 @@ package GUISolucionador;
 import javafx.application.Platform;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Actuación de la GUI del solucionador: lo que el agente hace hacia afuera.
@@ -34,7 +35,7 @@ public class Actuacion {
      */
     public void reproducirSolucion(int[] puzzle, List<int[]> movimientos, Percepcion.Resultado r) {
         String resumen = r.heuristica() + ": " + movimientos.size() + " movimientos · "
-                + r.expandidos() + " expandidos · " + r.tiempoMs() + " ms";
+                + r.expandidos() + " expandidos · " + String.format(Locale.ROOT, "%.2f", r.tiempoMs()) + " ms";
         enVentana(() -> {
             ventana.mostrarMensaje("Resolviendo con " + r.heuristica() + "…", false);
             ventana.reproducirSolucion(puzzle, movimientos, () -> {

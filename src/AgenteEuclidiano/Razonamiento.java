@@ -25,8 +25,7 @@ public class Razonamiento {
     private final Map<String, int[]> padre = new HashMap<>(); // para reconstruir el camino
     private int[] actual;
     private int expandidos;
-    private long inicioNanos;
-    private long tiempoMs;
+    private long nanosProceso; // tiempo de procesador que lleva esta búsqueda
 
     public Razonamiento() {
         for (int i = 0; i < 9; i++) {
@@ -40,17 +39,14 @@ public class Razonamiento {
         visitados.clear();
         padre.clear();
         expandidos = 0;
-        inicioNanos = System.nanoTime();
+        nanosProceso = 0;
         actual = null;
         recibirVecinos(vecinos);
     }
 
     /** Agrega a la frontera los vecinos del nodo actual que no se hayan visto. */
     public void recibirVecinos(int[][] vecinos) {
-        System.out.println("\nEvaluando vecinos del nodo actual...");
         for (int[] estado : vecinos) {
-            double h = euclidiana(estado);
-            System.out.println("   - Vecino " + Arrays.toString(estado) + " -> h = " + String.format("%.2f", h));
             if (visitados.add(clave(estado))) {
                 padre.put(clave(estado), actual);
                 abierta.add(estado);
@@ -62,16 +58,9 @@ public class Razonamiento {
     public int[] siguiente() {
         actual = abierta.poll();
         if (actual == null) {
-            System.out.println("No hay más nodos en la frontera. Sin solución.");
             return null;
         }
-        
-        System.out.println("Elegido el nodo con menor h: " + Arrays.toString(actual) + " (h = " + String.format("%.2f", euclidiana(actual)) + ")");
-        
-        if (esMeta(actual)) {
-            System.out.println("META ALCANZADA!");
-            tiempoMs = (System.nanoTime() - inicioNanos) / 1_000_000;
-        } else {
+        if (!esMeta(actual)) {
             expandidos++;
         }
         return actual;
@@ -111,8 +100,17 @@ public class Razonamiento {
         return expandidos;
     }
 
-    public long getTiempoMs() {
-        return tiempoMs;
+    /**
+     * Suma el tiempo de un turno del solucionador (percibir, razonar y actuar).
+     * No cuenta la espera de los vecinos del generador ni lo que se imprime.
+     */
+    public void sumarTiempo(long nanos) {
+        nanosProceso += nanos;
+    }
+
+    /** Tiempo de procesador de la búsqueda, en milisegundos con decimales. */
+    public double getTiempoMs() {
+        return nanosProceso / 1_000_000.0;
     }
 
     private static String clave(int[] estado) {

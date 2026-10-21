@@ -101,6 +101,8 @@ Una carpeta por agente, cada una con su percepción, razonamiento y actuación:
 | `src/GUISolucionador/` | GUI que anima la solución del solucionador 3 | `gui3` |
 
 - El solucionador reporta su resultado a **`gui`** (la GUI principal, que compara a los 3) **y** a **`gui3`** (que anima la solución).
+- El tiempo reportado es **tiempo de procesador**: suma solo lo que tarda cada turno del solucionador, sin la espera de red ni los `println`. Se envía con decimales (`tiempoMs=37.354`).
+- La terminal muestra pocas líneas: los 3 primeros nodos elegidos, uno cada 100 y el resumen al llegar a la meta.
 - `gui3` recibe el puzzle del generador al presionar **Resolver** y anima el camino a 0.25 s por movimiento.
 - `lib/` trae JavaFX 21.0.2 para Windows (`-win`) y Linux (`-linux`).
 
