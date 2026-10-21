@@ -6,10 +6,7 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.lang.acl.UnreadableException;
 
-/**
- * Percepción del solucionador: los INFORM del generador.
- * Cada estado es un int[9] por filas, 0 = espacio vacío; llegan como int[][].
- */
+
 public class Percepcion {
 
     private final MessageTemplate plantilla = MessageTemplate.and(
@@ -32,6 +29,7 @@ public class Percepcion {
     /**
      * Un puzzle nuevo llega sin "in-reply-to" (el generador lo manda por su cuenta);
      * los vecinos de un nodo pedido llegan como respuesta a nuestro REQUEST.
+     * Si llega con in-reply-to, es la respuesta a un REQUEST.
      */
     public boolean esNuevoPuzzle(ACLMessage msg) {
         return msg.getInReplyTo() == null;

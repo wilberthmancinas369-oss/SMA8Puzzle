@@ -10,13 +10,14 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Actuación del solucionador: pedir vecinos al generador e informar el resultado a la GUI.
+ * Actuación del solucionador: pedir vecinos al generador e informar el resultado a las GUIs.
  */
 public class Actuacion {
 
     private final Agent agente;
     private final AID generador = new AID(AgenteEuclidiano.GENERADOR, AID.ISLOCALNAME);
     private final AID gui = new AID(AgenteEuclidiano.GUI, AID.ISLOCALNAME);
+    private final AID guiSolucionador = new AID(AgenteEuclidiano.GUI_SOLUCIONADOR, AID.ISLOCALNAME);
     private int pedidos = 0; // identifica cada REQUEST para reconocer su respuesta
 
     public Actuacion(Agent agente) {
@@ -41,7 +42,7 @@ public class Actuacion {
         return idPedido(pedidos).equals(msg.getInReplyTo());
     }
 
-    /** INFORM (camino, nodos expandidos, tiempo) -> GUI. */
+    /** INFORM (camino, nodos expandidos, tiempo) -> GUI principal y GUI del solucionador. */
     public void informarResultado(List<int[]> camino, int expandidos, long tiempoMs) {
         List<String> pasos = new ArrayList<>();
         for (int[] e : camino) {
@@ -49,6 +50,7 @@ public class Actuacion {
         }
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.addReceiver(gui);
+        msg.addReceiver(guiSolucionador);
         msg.setContent("heuristica=euclidiana;camino=" + String.join(">", pasos)
                 + ";expandidos=" + expandidos + ";tiempoMs=" + tiempoMs);
         agente.send(msg);

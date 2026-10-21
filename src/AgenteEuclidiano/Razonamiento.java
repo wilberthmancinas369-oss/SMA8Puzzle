@@ -14,15 +14,12 @@ import java.util.Set;
 /**
  * Razonamiento: Greedy Best-First Search con la heurística euclidiana.
  * Un estado es un int[9] por filas, 0 = espacio vacío.
- * Ciclo: siguiente() -> (se piden sus vecinos al generador) -> recibirVecinos() -> siguiente()...
  */
 public class Razonamiento {
 
     public static final int[] META = {1, 2, 3, 4, 5, 6, 7, 8, 0};
 
     private final int[] posMeta = new int[9]; // posMeta[ficha] = casilla de esa ficha en la meta
-
-    /** Lista abierta: sale primero el estado con menor distancia euclidiana. */
     private final PriorityQueue<int[]> abierta = new PriorityQueue<>(Comparator.comparingDouble(this::euclidiana));
     private final Set<String> visitados = new HashSet<>();
     private final Map<String, int[]> padre = new HashMap<>(); // para reconstruir el camino
@@ -50,7 +47,10 @@ public class Razonamiento {
 
     /** Agrega a la frontera los vecinos del nodo actual que no se hayan visto. */
     public void recibirVecinos(int[][] vecinos) {
+        System.out.println("\nEvaluando vecinos del nodo actual...");
         for (int[] estado : vecinos) {
+            double h = euclidiana(estado);
+            System.out.println("   - Vecino " + Arrays.toString(estado) + " -> h = " + String.format("%.2f", h));
             if (visitados.add(clave(estado))) {
                 padre.put(clave(estado), actual);
                 abierta.add(estado);
@@ -62,9 +62,14 @@ public class Razonamiento {
     public int[] siguiente() {
         actual = abierta.poll();
         if (actual == null) {
+            System.out.println("No hay más nodos en la frontera. Sin solución.");
             return null;
         }
+        
+        System.out.println("Elegido el nodo con menor h: " + Arrays.toString(actual) + " (h = " + String.format("%.2f", euclidiana(actual)) + ")");
+        
         if (esMeta(actual)) {
+            System.out.println("META ALCANZADA!");
             tiempoMs = (System.nanoTime() - inicioNanos) / 1_000_000;
         } else {
             expandidos++;

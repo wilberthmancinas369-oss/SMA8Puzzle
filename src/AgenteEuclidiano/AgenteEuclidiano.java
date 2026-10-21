@@ -11,7 +11,8 @@ import jade.lang.acl.ACLMessage;
 public class AgenteEuclidiano extends Agent {
 
     static final String GENERADOR = "generador";
-    static final String GUI = "gui";
+    static final String GUI = "gui";              // GUI principal: compara a los 3 solucionadores
+    static final String GUI_SOLUCIONADOR = "gui3"; // su propia GUI: anima la solución
 
     private final Percepcion percepcion = new Percepcion();
     private final Razonamiento razonamiento = new Razonamiento();
@@ -37,6 +38,9 @@ public class AgenteEuclidiano extends Agent {
 
                 // RAZONAMIENTO: agregar los estados a la frontera y elegir el de menor h
                 if (percepcion.esNuevoPuzzle(msg)) {
+                    System.out.println("\n\n=====================================================");
+                    System.out.println("INICIANDO BUSQUEDA DE NUEVO PUZZLE...");
+                    System.out.println("=====================================================");
                     razonamiento.nuevoPuzzle(vecinos);
                 } else if (actuacion.esRespuestaActual(msg)) {
                     razonamiento.recibirVecinos(vecinos);

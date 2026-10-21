@@ -90,3 +90,23 @@ sequenceDiagram
 4. Ejecutar la configuración **JADE Plataforma** (`jade.Boot -gui`).
 
 > Si sale `No ICP active`, ya hay otra plataforma JADE usando el puerto 1099: ciérrala primero.
+
+## Solucionador 3 (esta rama)
+
+Una carpeta por agente, cada una con su percepción, razonamiento y actuación:
+
+| Carpeta | Agente | Nombre en JADE |
+|---|---|---|
+| `src/AgenteEuclidiano/` | Solucionador con Greedy Best-First y heurística **euclidiana** | `solucionador3` |
+| `src/GUISolucionador/` | GUI que anima la solución del solucionador 3 | `gui3` |
+
+- El solucionador reporta su resultado a **`gui`** (la GUI principal, que compara a los 3) **y** a **`gui3`** (que anima la solución).
+- `gui3` recibe el puzzle del generador al presionar **Resolver** y anima el camino a 0.25 s por movimiento.
+- `lib/` trae JavaFX 21.0.2 para Windows (`-win`) y Linux (`-linux`).
+
+### Ejecutar en red
+Configuración **JADE Red (contenedor)** (arranca primero la computadora principal):
+```
+-container -host 10.21.26.144 -port 1099 -local-host 10.21.40.37 -local-port 1100 -agents "solucionador3:AgenteEuclidiano.AgenteEuclidiano;gui3:GUISolucionador.AgenteGUISolucionador"
+```
+Si cambian las IPs, actualizar `-host` (principal) y `-local-host` (esta computadora).
