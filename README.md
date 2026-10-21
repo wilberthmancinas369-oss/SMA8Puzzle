@@ -97,7 +97,7 @@ Una carpeta por agente, cada una con su percepción, razonamiento y actuación:
 
 | Carpeta | Agente | Nombre en JADE |
 |---|---|---|
-| `src/AgenteEuclidiano/` | Solucionador con Greedy Best-First y heurística **euclidiana** | `solucionador3` |
+| `AgenteManhattan` | Solucionador con Greedy Best-First y heurística **euclidiana** | `solucionador3` |
 | `src/GUISolucionador/` | GUI que anima la solución del solucionador 3 | `gui3` |
 
 - El solucionador reporta su resultado a **`gui`** (la GUI principal, que compara a los 3) **y** a **`gui3`** (que anima la solución).
@@ -109,7 +109,7 @@ Una carpeta por agente, cada una con su percepción, razonamiento y actuación:
 ### Ejecutar en red
 Configuración **JADE Red (contenedor)** (arranca primero la computadora principal):
 ```
--container -host 10.21.26.144 -port 1099 -local-host 10.21.40.37 -local-port 1100 -agents "solucionador3:AgenteEuclidiano.AgenteEuclidiano;gui3:GUISolucionador.AgenteGUISolucionador(Euclidiana)"
+-container -host 10.21.26.144 -port 1099 -local-host 10.21.40.37 -local-port 1100 -agents "solucionador3:AgenteManhattan.AgenteManhattan;gui3:GUISolucionador.AgenteGUISolucionador(Euclidiana)"
 ```
 `(Euclidiana)` es el nombre que muestra la ventana de `gui3`.
 Si cambian las IPs, actualizar `-host` (principal) y `-local-host` (esta computadora).

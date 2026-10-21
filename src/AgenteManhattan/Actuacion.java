@@ -1,4 +1,4 @@
-package AgenteEuclidiano;
+package AgenteManhattan;
 
 import jade.core.AID;
 import jade.core.Agent;
@@ -16,9 +16,9 @@ import java.util.Locale;
 public class Actuacion {
 
     private final Agent agente;
-    private final AID generador = new AID(AgenteEuclidiano.GENERADOR, AID.ISLOCALNAME);
-    private final AID gui = new AID(AgenteEuclidiano.GUI, AID.ISLOCALNAME);
-    private final AID guiSolucionador = new AID(AgenteEuclidiano.GUI_SOLUCIONADOR, AID.ISLOCALNAME);
+    private final AID generador = new AID(AgenteManhattan.GENERADOR, AID.ISLOCALNAME);
+    private final AID gui = new AID(AgenteManhattan.GUI, AID.ISLOCALNAME);
+    private final AID guiSolucionador = new AID(AgenteManhattan.GUI_SOLUCIONADOR, AID.ISLOCALNAME);
     private int pedidos = 0; // identifica cada REQUEST para reconocer su respuesta
 
     public Actuacion(Agent agente) {
@@ -52,7 +52,7 @@ public class Actuacion {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.addReceiver(gui);
         msg.addReceiver(guiSolucionador);
-        msg.setContent("heuristica=euclidiana;camino=" + String.join(">", pasos)
+        msg.setContent("heuristica=manhattan;camino=" + String.join(">", pasos)
                 + ";expandidos=" + expandidos + ";tiempoMs=" + String.format(Locale.ROOT, "%.3f", tiempoMs));
         agente.send(msg);
     }
@@ -60,7 +60,7 @@ public class Actuacion {
     // ===================== Depuración (pocas líneas) =====================
 
     public void imprimirInicio() {
-        System.out.println("\n===== NUEVO PUZZLE: buscando con la heurística euclidiana =====");
+        System.out.println("\n===== NUEVO PUZZLE: buscando con la heurística manhattan =====");
     }
 
     /** Solo los 3 primeros nodos elegidos y luego uno cada 100, para no llenar la terminal. */
