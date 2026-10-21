@@ -109,6 +109,7 @@ Una carpeta por agente, cada una con su percepción, razonamiento y actuación:
 ### Ejecutar en red
 Configuración **JADE Red (contenedor)** (arranca primero la computadora principal):
 ```
--container -host 10.21.26.144 -port 1099 -local-host 10.21.40.37 -local-port 1100 -agents "solucionador3:AgenteEuclidiano.AgenteEuclidiano;gui3:GUISolucionador.AgenteGUISolucionador"
+-container -host 10.21.26.144 -port 1099 -local-host 10.21.40.37 -local-port 1100 -agents "solucionador3:AgenteEuclidiano.AgenteEuclidiano;gui3:GUISolucionador.AgenteGUISolucionador(Euclidiana)"
 ```
+`(Euclidiana)` es el nombre que muestra la ventana de `gui3`.
 Si cambian las IPs, actualizar `-host` (principal) y `-local-host` (esta computadora).
