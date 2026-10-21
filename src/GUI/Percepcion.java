@@ -10,15 +10,15 @@ import java.util.List;
  * Percepción del Agente GUI: lee el buzón y reconoce los resultados de los solucionadores.
  * (Los eventos de la ventana llegan aparte, por onGuiEvent.)
  */
-public class Percepcion {
+public class Percepcion{
 
     /** Lo que reporta un solucionador al encontrar la meta. */
     public record Resultado(String solucionador, String heuristica, List<int[]> camino,
-                            int expandidos, long tiempoMs) {
+                            int expandidos, double tiempoMs) {
     }
 
     public ACLMessage percibir(Agent agente) {
-        return agente.receive(); // todo el buzón: lo que no sea un resultado se descarta
+        return agente.receive(); // todo el buzon: lo que no sea un resultado se descarta
     }
 
     /**
@@ -32,7 +32,7 @@ public class Percepcion {
         String heuristica = null;
         List<int[]> camino = null;
         int expandidos = 0;
-        long tiempoMs = 0;
+        double tiempoMs = 0;
         try {
             for (String campo : msg.getContent().split(";")) {
                 String[] par = campo.split("=", 2);
@@ -43,7 +43,7 @@ public class Percepcion {
                     case "heuristica" -> heuristica = par[1].trim();
                     case "camino" -> camino = leerCamino(par[1]);
                     case "expandidos" -> expandidos = Integer.parseInt(par[1].trim());
-                    case "tiempoMs" -> tiempoMs = Long.parseLong(par[1].trim());
+                    case "tiempoMs" -> tiempoMs = Double.parseDouble(par[1].trim()); // puede traer decimales
                 }
             }
         } catch (NumberFormatException e) {

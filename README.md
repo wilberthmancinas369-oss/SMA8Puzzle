@@ -36,7 +36,8 @@ Sistema Multiagente en **JADE** que resuelve el **8-Puzzle**. Los agentes se com
 | Nodos siguientes | Generador → Solucionador | `INFORM` | 2, 3 o 4 estados (`int[9]` cada uno) |
 | Nodo elegido | Solucionador → Generador | `REQUEST` | estado elegido (`int[9]`) |
 | Fin de la búsqueda | Generador → Solucionador | `INFORM` | `"meta alcanzada"` |
-| Resultado | Solucionador → GUI | `INFORM` | heurística, camino, nodos expandidos, tiempo |
+| Puzzle a animar | Generador → GUI de cada solucionador (`gui1`, `gui2`, `gui3`) | `INFORM` | estado inicial (`int[9]`) |
+| Resultado | Solucionador → `gui` **y** su `guiN` | `INFORM` | `heuristica=...;camino=...;expandidos=...;tiempoMs=...` (tiempo de procesador, con decimales) |
 | Exploración | Generador → GUI | `INFORM` | subgrafo explorado por cada heurística |
 
 > **Importante para los solucionadores:** el nodo elegido debe ser el mejor de **toda** su lista abierta (todos los nodos recibidos y aún no expandidos), no solo de los 2–4 que acaban de llegar. Si no, el algoritmo se convierte en *hill climbing* y puede atorarse sin llegar a la meta.
@@ -103,7 +104,8 @@ Es **una sola plataforma JADE repartida en varias computadoras**:
    - Recibe `INFORM` del `generador` con `int[][]` (vecinos): `(int[][]) msg.getContentObject()`.
    - El primer mensaje (sin `in-reply-to`) es un puzzle nuevo.
    - Pide vecinos con `REQUEST` al `generador` y el nodo elegido como `int[]` (`setContentObject`).
-   - Reporta a la `gui` con `INFORM`: `heuristica=...;camino=...;expandidos=...;tiempoMs=...`
+   - Reporta a la `gui` **y** a su `guiN` con `INFORM`: `heuristica=...;camino=...;expandidos=...;tiempoMs=...`
+   - `tiempoMs` es tiempo de procesador: no cuenta la espera de red ni los `println` (ver rama `AgenteGUIparaSolucionadores`).
 3. **El mismo `jade.jar` (4.6.0)** que el proyecto.
 
 ### Paso 1: misma red
@@ -147,7 +149,7 @@ Remove-NetFirewallRule -DisplayName "JADE 1100"
 1. La **principal** arranca y espera a que aparezca la ventana de JADE.
 2. Cada **solucionador** arranca su contenedor. En su consola: `Agent container Container-N@SU_IP is ready.`
 3. En la ventana de JADE aparece un **Container-N** por compañero, con su solucionador adentro.
-4. Presionar **Resolver**: la terminal de la principal se llena de vecinos (las peticiones de los solucionadores).
+4. Presionar **Resolver**: el tablero se oculta y aparece "Esperando solucionadores" con la cuenta (1 de 3, 2 de 3...). Al llegar los 3 resultados se muestra la comparación de movimientos, nodos expandidos y tiempo de procesador.
 
 ### Errores frecuentes
 | Error | Causa | Solución |

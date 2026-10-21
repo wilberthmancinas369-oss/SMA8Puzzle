@@ -1,16 +1,22 @@
 package GUI;
 
+import AgenteGenerador.AgenteGenerador;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.gui.GuiAgent;
 import jade.gui.GuiEvent;
 import jade.lang.acl.ACLMessage;
 import javafx.application.Platform;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Agente GUI: recibe el puzzle del usuario (o propone uno aleatorio),
- * se lo entrega al generador y muestra los resultados.
+ * se lo entrega al generador y, cuando los 3 solucionadores terminan, los compara.
+ * La animación de cada solución se ve en la GUI de cada solucionador (gui1, gui2, gui3).
  * No genera el espacio de estados.
  *
  * Extiende GuiAgent para que el clic de un botón (hilo de JavaFX)
@@ -22,13 +28,16 @@ public class AgenteGUI extends GuiAgent {
     static final int EVENTO_CASILLA = 2;
     static final int EVENTO_RESOLVER = 3;
 
+    private static final List<String> SOLUCIONADORES = Arrays.asList(AgenteGenerador.SOLUCIONADORES);
+
     private final Percepcion percepcion = new Percepcion();
     private final Razonamiento razonamiento = new Razonamiento();
     private Actuacion actuacion;
     private Ventana ventana;
     private int[] tableroActual;
     private int[] tableroResuelto;  // el tablero que se mandó a resolver
-    private long inicioResolver;    // System.nanoTime() al presionar "Resolver"
+    private boolean esperando = false;
+    private final Map<String, Ventana.Fila> resultados = new HashMap<>(); // por solucionador
 
     @Override
     protected void setup() {
@@ -71,11 +80,16 @@ public class AgenteGUI extends GuiAgent {
     }
 
     private void resolver() {
-        // RAZONAMIENTO: recordar qué tablero se va a resolver y desde cuándo
+        if (esperando) {
+            return;
+        }
+        // RAZONAMIENTO: recordar qué tablero se va a resolver y empezar a esperar
         tableroResuelto = tableroActual.clone();
-        inicioResolver = System.nanoTime();
+        resultados.clear();
+        esperando = true;
 
-        // ACTUACIÓN: entregar el tablero actual al generador (él lo evalúa)
+        // ACTUACIÓN: ocultar el tablero y entregarlo al generador (él lo evalúa)
+        actuacion.mostrarEspera(0, SOLUCIONADORES.size());
         actuacion.enviarPuzzle(this, tableroActual);
     }
 
@@ -90,27 +104,36 @@ public class AgenteGUI extends GuiAgent {
                 return;
             }
             Percepcion.Resultado resultado = percepcion.leerResultado(msg);
-            if (resultado == null || tableroResuelto == null) {
+            if (resultado == null || !esperando) {
                 return; // AGREE/REFUSE del generador u otro mensaje
             }
 
-            // RAZONAMIENTO: tiempo real de resolución y movimientos a animar
-            long tiempoMs = (System.nanoTime() - inicioResolver) / 1_000_000;
+            // RAZONAMIENTO: ¿es de un solucionador y su camino sale del tablero que mandé?
+            int color = SOLUCIONADORES.indexOf(resultado.solucionador());
             List<int[]> movimientos = Razonamiento.movimientos(tableroResuelto, resultado.camino());
-            if (movimientos == null) {
-                return; // el camino tiene pasos ilegales
+            if (color < 0 || movimientos == null) {
+                return; // otro agente, o el resultado de un puzzle anterior
             }
-            tableroActual = Razonamiento.META.clone(); // así queda el tablero al terminar
+            resultados.put(resultado.solucionador(), new Ventana.Fila(resultado.solucionador(),
+                    resultado.heuristica(), color, movimientos.size(), resultado.expandidos(), resultado.tiempoMs()));
 
-            // ACTUACIÓN: animar la solución y al final imprimir el resumen
-            actuacion.reproducirSolucion(tableroResuelto, movimientos,
-                    resultado.solucionador() + " (" + resultado.heuristica() + "): "
-                            + movimientos.size() + " movimientos, " + tiempoMs + " ms");
+            // ACTUACIÓN: seguir esperando o, si ya están los 3, compararlos
+            if (resultados.size() < SOLUCIONADORES.size()) {
+                actuacion.mostrarEspera(resultados.size(), SOLUCIONADORES.size());
+                return;
+            }
+            esperando = false;
+            List<Ventana.Fila> filas = new ArrayList<>();
+            for (String nombre : SOLUCIONADORES) {
+                filas.add(resultados.get(nombre)); // siempre en el mismo orden
+            }
+            actuacion.mostrarComparacion(filas);
         }
     }
 
     private void comenzar() {
         // RAZONAMIENTO: proponer un tablero nuevo que siempre tenga solución
+        esperando = false; // si se estaba esperando, se cancela
         tableroActual = razonamiento.generarTableroAleatorio();
 
         // ACTUACIÓN: mostrarlo en la ventana y en la terminal

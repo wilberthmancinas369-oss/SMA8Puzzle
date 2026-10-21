@@ -34,6 +34,20 @@ public class Actuacion {
         enviar(agente, msg, vecinos);
     }
 
+    /** Puzzle nuevo: las GUIs de los solucionadores lo muestran mientras esperan su solución. */
+    public void avisarGuis(Agent agente, String[] guis, int[] puzzle) {
+        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+        for (String nombre : guis) {
+            msg.addReceiver(new AID(nombre, AID.ISLOCALNAME));
+        }
+        try {
+            msg.setContentObject(puzzle.clone());
+            agente.send(msg);
+        } catch (IOException e) {
+            throw new IllegalStateException("No se pudo empaquetar el puzzle", e);
+        }
+    }
+
     /** Un solucionador eligió un nodo: solo él recibe los vecinos. */
     public void responder(Agent agente, ACLMessage pedido, int[][] vecinos) {
         ACLMessage respuesta = pedido.createReply();

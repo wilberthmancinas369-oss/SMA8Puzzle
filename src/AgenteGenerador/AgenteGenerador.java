@@ -13,7 +13,8 @@ public class AgenteGenerador extends Agent {
 
     public static final String NOMBRE = "generador";
     static final String GUI = "gui";
-    static final String[] SOLUCIONADORES = {"solucionador1", "solucionador2", "solucionador3"};
+    public static final String[] SOLUCIONADORES = {"solucionador1", "solucionador2", "solucionador3"};
+    static final String[] GUIS_SOLUCIONADORES = {"gui1", "gui2", "gui3"}; // animan cada solución
 
     private final Percepcion percepcion = new Percepcion();
     private final Razonamiento razonamiento = new Razonamiento();
@@ -44,6 +45,7 @@ public class AgenteGenerador extends Agent {
                 if (msg.getSender().getLocalName().equals(GUI)) {
                     actuacion.aceptar(myAgent, msg);                                  // AGREE a la GUI
                     actuacion.entregarASolucionadores(myAgent, SOLUCIONADORES, vecinos); // puzzle nuevo
+                    actuacion.avisarGuis(myAgent, GUIS_SOLUCIONADORES, nodo);             // qué puzzle animar
                 } else {
                     actuacion.responder(myAgent, msg, vecinos);                       // nodo elegido por un solucionador
                 }

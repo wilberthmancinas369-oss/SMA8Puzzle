@@ -67,3 +67,25 @@
             #4a3010,
             linear-gradient(to bottom, #a8772a 0%, #d4a54f 100%);
 }
+
+/* ---------- Espera y comparación ---------- */
+
+.anillo {
+    -fx-progress-color: #d4a54f;
+}
+
+.grupo {
+    -fx-text-fill: #e8c98f;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.nombre {
+    -fx-text-fill: #dcc29a;
+    -fx-font-size: 12px;
+}
+
+.valor {
+    -fx-text-fill: #f3e2c3;
+    -fx-font-size: 12px;
+}

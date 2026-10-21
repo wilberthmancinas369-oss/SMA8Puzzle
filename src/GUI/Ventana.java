@@ -4,20 +4,26 @@ import GUI.styles.TexturaMadera;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.InnerShadow;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -32,16 +38,17 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
 import java.util.Random;
 import java.util.function.IntConsumer;
+import java.util.Locale;
+import java.util.function.ToDoubleFunction;
 
 /**
  * Vista JavaFX del Agente GUI con estilo de puzzle de madera.
  * No sabe nada de JADE ni de las reglas del puzzle:
- * avisa por callbacks cuando se presiona "Comenzar", una casilla o se cierra la ventana.
+ * avisa por callbacks cuando se presiona "Mezclar", una casilla o se cierra la ventana.
+ * Tiene tres vistas dentro del mismo marco: el tablero, la espera y la comparación.
  * Sus métodos deben llamarse en el hilo de JavaFX (Platform.runLater).
  */
 public class Ventana {
@@ -52,8 +59,13 @@ public class Ventana {
     private static final int INTERIOR = 3 * TAM + 4 * ESPACIO;
 
     private static final Duration DURACION_MOVER = Duration.millis(170);
-    private static final Duration DURACION_REVOLVER = Duration.millis(380);
-    private static final Duration PASO_SOLUCION = Duration.millis(250); // ritmo visible de la solución
+    private static final Duration DURACION_Mezclar = Duration.millis(380);
+    private static final Duration DURACION_BARRA = Duration.millis(600);
+
+    /** Un color por solucionador, siempre en el mismo orden (validados sobre el fondo de nogal). */
+    private static final Color[] COLORES = {Color.web("#3987e5"), Color.web("#d95926"), Color.web("#199e70")};
+    private static final int ANCHO_NOMBRE = 92;
+    private static final int ANCHO_BARRA = 120;
 
     private static final String FUENTE = elegirFuente();
 
@@ -64,10 +76,20 @@ public class Ventana {
     private Runnable alTerminar;                         // deja las fichas en su lugar final
     private boolean animando = false;
     private boolean primerTablero = true;
-    private Timeline solucion;                           // solución reproduciéndose (o null)
-    private final Deque<Runnable> solucionesPendientes = new ArrayDeque<>();
 
-    public Ventana(Runnable onComenzar, Runnable onResolver, IntConsumer onCasilla, Runnable onCerrar) {
+    private final StackPane vistaTablero;
+    private final StackPane vistaEspera;
+    private final StackPane vistaComparacion;
+    private final Label conteo = new Label();             // "1 de 3 listos"
+    private final VBox comparacion = new VBox(12);        // barras de la comparación
+    private final Button resolver;
+
+    /** Lo que reportó un solucionador, listo para compararlo. color = índice en COLORES. */
+    public record Fila(String solucionador, String heuristica, int color,
+                       int movimientos, int expandidos, double tiempoMs) {
+    }
+
+    public Ventana(Runnable onMezclar, Runnable onResolver, IntConsumer onCasilla, Runnable onCerrar) {
         Pane piezas = new Pane();
         piezas.setPrefSize(INTERIOR, INTERIOR);
         piezas.setMaxSize(INTERIOR, INTERIOR);
@@ -77,7 +99,7 @@ public class Ventana {
             StackPane ficha = crearFicha(n, azar);
             int numero = n;
             ficha.setOnMouseClicked(e -> {
-                if (!animando && solucion == null) {
+                if (!animando) {
                     onCasilla.accept(posicion[numero]); // avisa qué casilla se tocó
                 }
             });
@@ -85,15 +107,24 @@ public class Ventana {
             piezas.getChildren().add(ficha);
         }
 
-        Button comenzar = crearBoton("Comenzar", "boton-madera");
-        comenzar.setOnAction(e -> onComenzar.run());
-        Button resolver = crearBoton("Resolver", "boton-madera", "boton-laton");
+        Button Mezclar = crearBoton("Mezclar", "boton-madera");
+        Mezclar.setOnAction(e -> onMezclar.run());
+        resolver = crearBoton("Resolver", "boton-madera", "boton-laton");
         resolver.setOnAction(e -> onResolver.run());
 
-        HBox botones = new HBox(16, comenzar, resolver);
+        HBox botones = new HBox(16, Mezclar, resolver);
         botones.setAlignment(Pos.CENTER);
 
-        VBox raiz = new VBox(22, crearTitulo(), crearTablero(piezas), botones);
+        vistaTablero = crearTablero(piezas);
+        vistaEspera = crearTablero(crearEspera());
+        comparacion.setPadding(new Insets(14));
+        comparacion.setMaxSize(INTERIOR, INTERIOR);
+        comparacion.setAlignment(Pos.CENTER_LEFT);
+        vistaComparacion = crearTablero(comparacion);
+        StackPane centro = new StackPane(vistaTablero, vistaEspera, vistaComparacion);
+        mostrarVista(vistaTablero);
+
+        VBox raiz = new VBox(22, crearTitulo(), centro, botones);
         raiz.setAlignment(Pos.CENTER);
         raiz.getStyleClass().add("mesa");
 
@@ -116,55 +147,44 @@ public class Ventana {
 
     /**
      * Coloca las fichas según el tablero (arreglo de 9 enteros por filas, 0 = espacio vacío).
-     * La primera vez aparecen directo; después se deslizan a su nuevo lugar, como al revolver.
-     * Cancela cualquier solución que se esté reproduciendo.
+     * La primera vez aparecen directo; después se deslizan a su nuevo lugar, como al Mezclar.
+     * Si estaba la espera o la comparación, regresa a la vista del tablero.
      */
     public void mostrarTablero(int[] tablero) {
-        cancelarSoluciones();
+        mostrarVista(vistaTablero);
+        resolver.setDisable(false);
         colocar(tablero);
     }
 
-    /**
-     * Reproduce una solución: vuelve al tablero inicial y aplica cada movimiento {desde, hacia}
-     * a ritmo visible. Si ya hay otra reproduciéndose, esta espera su turno.
-     */
-    public void reproducirSolucion(int[] inicial, List<int[]> movimientos, Runnable alFinal) {
-        Runnable reproducir = () -> {
-            colocar(inicial);
-            solucion = new Timeline();
-            Duration t = DURACION_REVOLVER.add(PASO_SOLUCION); // primero deja que se acomode el inicial
-            for (int[] m : movimientos) {
-                solucion.getKeyFrames().add(new KeyFrame(t, e -> animarMovimiento(m[0], m[1])));
-                t = t.add(PASO_SOLUCION);
-            }
-            solucion.getKeyFrames().add(new KeyFrame(t, e -> {
-                solucion = null;
-                alFinal.run();
-                Runnable siguiente = solucionesPendientes.poll();
-                if (siguiente != null) {
-                    siguiente.run();
-                }
-            }));
-            solucion.play();
-        };
-        if (solucion == null) {
-            reproducir.run();
-        } else {
-            solucionesPendientes.add(reproducir);
-        }
+    /** El tablero desaparece y gira el anillo mientras llegan los resultados. */
+    public void mostrarEspera(int listos, int total) {
+        conteo.setText(listos + " de " + total + " listos");
+        mostrarVista(vistaEspera);
+        resolver.setDisable(true);
     }
 
-    private void cancelarSoluciones() {
-        solucionesPendientes.clear();
-        if (solucion != null) {
-            solucion.stop();
-            solucion = null;
-        }
+    /**
+     * Compara a los solucionadores en tres grupos de barras (movimientos, expandidos y tiempo).
+     * Cada grupo tiene su propia escala: la barra más larga es el valor más grande de ese grupo.
+     */
+    public void mostrarComparacion(List<Fila> filas) {
+        comparacion.getChildren().setAll(
+                crearGrupo("Movimientos", "%.0f", filas, Fila::movimientos),
+                crearGrupo("Nodos expandidos", "%.0f", filas, Fila::expandidos),
+                crearGrupo("Tiempo de procesador", "%.2f ms", filas, Fila::tiempoMs));
+        mostrarVista(vistaComparacion);
+        resolver.setDisable(true);
+    }
+
+    private void mostrarVista(Node vista) {
+        vistaTablero.setVisible(vista == vistaTablero);
+        vistaEspera.setVisible(vista == vistaEspera);
+        vistaComparacion.setVisible(vista == vistaComparacion);
     }
 
     private void colocar(int[] tablero) {
         detenerAnimacion();
-        ParallelTransition revolver = new ParallelTransition();
+        ParallelTransition Mezclar = new ParallelTransition();
         for (int casilla = 0; casilla < tablero.length; casilla++) {
             int n = tablero[casilla];
             if (n == 0) {
@@ -181,15 +201,15 @@ public class Ventana {
                 // la ficha sigue visualmente donde estaba y se desliza a su lugar nuevo
                 ficha.setTranslateX(antesX - x(casilla));
                 ficha.setTranslateY(antesY - y(casilla));
-                TranslateTransition t = new TranslateTransition(DURACION_REVOLVER, ficha);
+                TranslateTransition t = new TranslateTransition(DURACION_Mezclar, ficha);
                 t.setToX(0);
                 t.setToY(0);
                 t.setInterpolator(Interpolator.EASE_BOTH);
-                revolver.getChildren().add(t);
+                Mezclar.getChildren().add(t);
             }
         }
         primerTablero = false;
-        reproducir(revolver, () -> {
+        reproducir(Mezclar, () -> {
             for (int n = 1; n <= 8; n++) {
                 fichas[n].setTranslateX(0);
                 fichas[n].setTranslateY(0);
@@ -256,7 +276,74 @@ public class Ventana {
         return caja;
     }
 
-    /** Marco de nogal con una bandeja hundida donde se deslizan las fichas. */
+    /** Anillo girando con el aviso de que se espera a los solucionadores. */
+    private VBox crearEspera() {
+        ProgressIndicator anillo = new ProgressIndicator();
+        anillo.getStyleClass().add("anillo");
+        anillo.setPrefSize(64, 64);
+
+        Label texto = new Label("Esperando solucionadores");
+        texto.getStyleClass().add("mensaje");
+        conteo.getStyleClass().add("subtitulo");
+
+        VBox caja = new VBox(14, anillo, texto, conteo);
+        caja.setAlignment(Pos.CENTER);
+        caja.setMaxSize(INTERIOR, INTERIOR);
+        return caja;
+    }
+
+    /** Un grupo de la comparación: título y una barra por solucionador. */
+    private VBox crearGrupo(String titulo, String formato, List<Fila> filas, ToDoubleFunction<Fila> valor) {
+        Label encabezado = new Label(titulo);
+        encabezado.getStyleClass().add("grupo");
+        VBox grupo = new VBox(4, encabezado);
+
+        double maximo = 0;
+        for (Fila f : filas) {
+            maximo = Math.max(maximo, valor.applyAsDouble(f));
+        }
+        for (Fila f : filas) {
+            double v = valor.applyAsDouble(f);
+            String texto = String.format(Locale.ROOT, formato, v);
+
+            Label nombre = new Label(f.heuristica());
+            nombre.getStyleClass().add("nombre");
+            nombre.setMinWidth(ANCHO_NOMBRE);
+            nombre.setMaxWidth(ANCHO_NOMBRE);
+
+            Region barra = new Region();
+            barra.setStyle("-fx-background-color: " + hex(COLORES[f.color() % COLORES.length])
+                    + "; -fx-background-radius: 0 4 4 0;");
+            barra.setMinHeight(12);
+            barra.setMaxHeight(12);
+            barra.setMinWidth(0);
+            barra.setPrefWidth(0);
+            barra.setMaxWidth(Region.USE_PREF_SIZE);
+            double ancho = maximo > 0 ? Math.max(2, ANCHO_BARRA * v / maximo) : 2;
+            new Timeline(new KeyFrame(DURACION_BARRA,
+                    new KeyValue(barra.prefWidthProperty(), ancho, Interpolator.EASE_OUT))).play();
+            HBox carril = new HBox(barra);
+            carril.setAlignment(Pos.CENTER_LEFT);
+            carril.setMinWidth(ANCHO_BARRA);
+            carril.setMaxWidth(ANCHO_BARRA);
+
+            Label numero = new Label(texto);
+            numero.getStyleClass().add("valor");
+
+            HBox fila = new HBox(8, nombre, carril, numero);
+            fila.setAlignment(Pos.CENTER_LEFT);
+            Tooltip.install(fila, new Tooltip(f.solucionador() + " · " + f.heuristica() + ": " + texto));
+            grupo.getChildren().add(fila);
+        }
+        return grupo;
+    }
+
+    private static String hex(Color c) {
+        return String.format("#%02x%02x%02x",
+                (int) Math.round(c.getRed() * 255), (int) Math.round(c.getGreen() * 255), (int) Math.round(c.getBlue() * 255));
+    }
+
+    /** Marco de nogal con una bandeja hundida donde va el contenido (fichas, espera o comparación). */
     private StackPane crearTablero(Pane piezas) {
         double lado = INTERIOR + 2 * MARCO;
 

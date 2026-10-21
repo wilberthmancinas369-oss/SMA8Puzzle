@@ -8,10 +8,11 @@ import javafx.application.Platform;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Actuación del Agente GUI: lo que el agente hace hacia afuera.
- * Mostrar el tablero en la ventana y en la terminal, y enviar el puzzle al generador.
+ * Mostrar el tablero, la espera y la comparación, y enviar el puzzle al generador.
  */
 public class Actuacion {
 
@@ -41,14 +42,22 @@ public class Actuacion {
         }
     }
 
-    /**
-     * Anima la solución paso a paso (a ritmo visible) desde el tablero inicial
-     * y, al terminar la animación, imprime el resumen en la terminal.
-     */
-    public void reproducirSolucion(int[] inicial, List<int[]> movimientos, String resumen) {
+    /** El tablero desaparece y aparece el anillo de espera con cuántos resultados han llegado. */
+    public void mostrarEspera(int listos, int total) {
         if (ventana != null) {
-            Platform.runLater(() -> ventana.reproducirSolucion(inicial, movimientos,
-                    () -> System.out.println(resumen)));
+            Platform.runLater(() -> ventana.mostrarEspera(listos, total));
+        }
+    }
+
+    /** Muestra la comparación en la ventana e imprime una línea por solucionador. */
+    public void mostrarComparacion(List<Ventana.Fila> filas) {
+        for (Ventana.Fila f : filas) {
+            System.out.println(f.solucionador() + " (" + f.heuristica() + "): " + f.movimientos()
+                    + " movimientos, " + f.expandidos() + " expandidos, "
+                    + String.format(Locale.ROOT, "%.3f", f.tiempoMs()) + " ms de procesador");
+        }
+        if (ventana != null) {
+            Platform.runLater(() -> ventana.mostrarComparacion(filas));
         }
     }
 
