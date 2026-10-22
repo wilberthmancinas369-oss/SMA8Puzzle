@@ -52,7 +52,7 @@ public class Actuacion {
         ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
         msg.addReceiver(gui);
         msg.addReceiver(guiSolucionador);
-        msg.setContent("heuristica=euclidiana;camino=" + String.join(">", pasos)
+        msg.setContent("heuristica=ponderacionInversa;camino=" + String.join(">", pasos)
                 + ";expandidos=" + expandidos + ";tiempoMs=" + String.format(Locale.ROOT, "%.3f", tiempoMs));
         agente.send(msg);
     }
@@ -60,7 +60,7 @@ public class Actuacion {
     // ===================== Depuración (pocas líneas) =====================
 
     public void imprimirInicio() {
-        System.out.println("\n===== NUEVO PUZZLE: buscando con la heurística euclidiana =====");
+        System.out.println("\n===== NUEVO PUZZLE: buscando con la heurística ponderacion inversa =====");
     }
 
     /** Solo los 3 primeros nodos elegidos y luego uno cada 100, para no llenar la terminal. */

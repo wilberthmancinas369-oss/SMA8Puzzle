@@ -2,7 +2,7 @@
   <configuration default="false" name="JADE Red (contenedor)" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="jade.Boot" />
     <module name="SMA8Puzzle" />
-    <option name="PROGRAM_PARAMETERS" value="-container -host 10.21.26.144 -port 1099 -local-host 10.21.40.37 -local-port 1100 -agents &quot;solucionador3:AgenteEuclidiano.AgenteEuclidiano;gui3:GUISolucionador.AgenteGUISolucionador(Euclidiana)&quot;" />
+    <option name="PROGRAM_PARAMETERS" value="-container -host 192.168.1.188 -port 1099 -local-host 192.168.1.202 -local-port 1100 -agents &quot;solucionador1:AgentePonderacionInversa.AgentePonderacionInversa;gui1:GUISolucionador.AgenteGUISolucionador(PonderacionInversa)&quot;" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

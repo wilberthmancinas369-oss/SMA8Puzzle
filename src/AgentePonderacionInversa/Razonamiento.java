@@ -5,61 +5,85 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Set;
 
-/**
- * Razonamiento: Greedy Best-First Search con la heurística euclidiana.
- * Un estado es un int[9] por filas, 0 = espacio vacío.
- */
 public class Razonamiento {
 
     public static final int[] META = {1, 2, 3, 4, 5, 6, 7, 8, 0};
 
-    private final int[] posMeta = new int[9]; // posMeta[ficha] = casilla de esa ficha en la meta
-    private final PriorityQueue<int[]> abierta = new PriorityQueue<>(Comparator.comparingDouble(this::ponderacionInversa));
-    private final Set<String> visitados = new HashSet<>();
-    private final Map<String, int[]> padre = new HashMap<>(); // para reconstruir el camino
-    private int[] actual;
-    private int expandidos;
-    private long nanosProceso; // tiempo de procesador que lleva esta búsqueda
+    /** Nodo de la frontera: g = movimientos desde el inicio, f = g + h. */
+    private static class Nodo {
+        final int[] estado;
+        final int g;
+        final double f;
 
-    public Razonamiento() {
-        for (int i = 0; i < 9; i++) {
-            posMeta[META[i]] = i;
+        Nodo(int[] estado, int g, double h) {
+            this.estado = estado;
+            this.g = g;
+            this.f = g + h;
         }
     }
 
-    /** Puzzle nuevo: los vecinos del estado inicial son el primer nivel de la búsqueda. */
-    public void nuevoPuzzle(int[][] vecinos) {
+    private final PriorityQueue<Nodo> abierta =
+            new PriorityQueue<>(Comparator.comparingDouble((Nodo n) -> n.f));
+    private final Map<String, Integer> mejorG = new HashMap<>();  // mejor g conocido por estado
+    private final Map<String, int[]> padre = new HashMap<>();     // para reconstruir el camino
+    private int[] actual;
+    private int gActual;       // g del nodo que se está expandiendo
+    private int expandidos;
+    private long nanosProceso; // tiempo de procesador que lleva esta búsqueda
+
+    /**
+     * Puzzle nuevo: el inicial entra con g = 0 y sus vecinos son el primer nivel.
+     *
+     * @return false si el puzzle no tiene solución (no se inicia la búsqueda).
+     */
+    public boolean nuevoPuzzle(int[][] vecinos) {
         abierta.clear();
-        visitados.clear();
+        mejorG.clear();
         padre.clear();
         expandidos = 0;
         nanosProceso = 0;
         actual = null;
+        gActual = 0;
+
         recibirVecinos(vecinos);
+        return true;
     }
 
-    /** Agrega a la frontera los vecinos del nodo actual que no se hayan visto. */
+    /**
+     * Agrega a la frontera los vecinos del nodo actual. Un vecino entra si es nuevo
+     * o si se llegó a él por un camino más corto que el conocido.
+     */
     public void recibirVecinos(int[][] vecinos) {
-        for (int[] estado : vecinos) {
-            if (visitados.add(clave(estado))) {
-                padre.put(clave(estado), actual);
-                abierta.add(estado);
+        int g = gActual + 1;
+        for (int[] original : vecinos) {
+            int[] estado = original.clone(); // por si el emisor reutiliza el arreglo
+            String k = clave(estado);
+            if (g < mejorG.getOrDefault(k, Integer.MAX_VALUE)) {
+                mejorG.put(k, g);
+                padre.put(k, actual);
+                abierta.add(new Nodo(estado, g, ponderacionInversa(estado)));
             }
         }
     }
 
-    /** Saca de la frontera el estado con menor h. Devuelve null si ya no hay estados. */
+    /** Saca de la frontera el estado con menor f. Devuelve null si ya no hay estados. */
     public int[] siguiente() {
-        actual = abierta.poll();
-        if (actual == null) {
-            return null;
-        }
+        Nodo n;
+        do {
+            n = abierta.poll();
+            if (n == null) {
+                actual = null;
+                return null;
+            }
+            // Entrada obsoleta: el estado se reinsertó con mejor g.
+        } while (n.g > mejorG.get(clave(n.estado)));
+
+        actual = n.estado;
+        gActual = n.g;
         if (!esMeta(actual)) {
             expandidos++;
         }
@@ -80,7 +104,7 @@ public class Razonamiento {
         return ruta;
     }
 
-    /** Calculo de heuristica */
+    /** Cálculo de heurística: inversión ponderada (el hueco cuenta como ficha 9). */
     public double ponderacionInversa(int[] estado) {
         double total = 0;
         for (int i = 0; i < 9; i++) {
@@ -94,7 +118,6 @@ public class Razonamiento {
                 total += ficha - fichaJ;
             }
         }
-
         return total;
     }
 
