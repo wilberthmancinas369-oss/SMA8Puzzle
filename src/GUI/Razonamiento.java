@@ -96,6 +96,30 @@ public class Razonamiento {
         return movimientos;
     }
 
+    /** Fichas (sin contar el hueco) que no están en su casilla de la meta. */
+    public static int fichasFueraDeLugar(int[] tablero) {
+        int fuera = 0;
+        for (int i = 0; i < tablero.length; i++) {
+            if (tablero[i] != 0 && tablero[i] != META[i]) {
+                fuera++;
+            }
+        }
+        return fuera;
+    }
+
+    /** Suma, por ficha, de las filas y columnas que la separan de su casilla en la meta. */
+    public static int distanciaManhattan(int[] tablero) {
+        int distancia = 0;
+        for (int i = 0; i < tablero.length; i++) {
+            int n = tablero[i];
+            if (n != 0) {
+                int meta = n - 1; // en la meta, la ficha n está en la casilla n-1
+                distancia += Math.abs(i / 3 - meta / 3) + Math.abs(i % 3 - meta % 3);
+            }
+        }
+        return distancia;
+    }
+
     public static int posicionHueco(int[] tablero) {
         for (int i = 0; i < tablero.length; i++) {
             if (tablero[i] == 0) {

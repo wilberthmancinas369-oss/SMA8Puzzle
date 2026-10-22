@@ -29,6 +29,7 @@ public class AgenteGUI extends GuiAgent {
     static final int EVENTO_RESOLVER = 3;
 
     private static final List<String> SOLUCIONADORES = Arrays.asList(AgenteGenerador.SOLUCIONADORES);
+    private static final int MENSAJES_RESULTADO = 2; // cada solucionador manda su INFORM a gui y a su guiN
 
     private final Percepcion percepcion = new Percepcion();
     private final Razonamiento razonamiento = new Razonamiento();
@@ -61,6 +62,7 @@ public class AgenteGUI extends GuiAgent {
             actuacion.setVentana(ventana);
             ventana.mostrar();
             actuacion.mostrarTablero(tableroActual); // tablero inicial
+            mostrarDistancias();
         };
         try {
             Platform.startup(crear);  // primera vez: arranca JavaFX
@@ -97,10 +99,16 @@ public class AgenteGUI extends GuiAgent {
     private class EscucharSolucionadores extends CyclicBehaviour {
         @Override
         public void action() {
-            // PERCEPCIÓN: un INFORM con el camino de algún solucionador
+            // PERCEPCIÓN: un INFORM con el camino de algún solucionador,
+            // o la respuesta del generador con los mensajes de cada uno
             ACLMessage msg = percepcion.percibir(myAgent);
             if (msg == null) {
                 block();
+                return;
+            }
+            Map<String, Integer> mensajes = percepcion.leerMensajes(msg);
+            if (mensajes != null) {
+                compararSiEstanTodos(mensajes);
                 return;
             }
             Percepcion.Resultado resultado = percepcion.leerResultado(msg);
@@ -115,20 +123,32 @@ public class AgenteGUI extends GuiAgent {
                 return; // otro agente, o el resultado de un puzzle anterior
             }
             resultados.put(resultado.solucionador(), new Ventana.Fila(resultado.solucionador(),
-                    resultado.heuristica(), color, movimientos.size(), resultado.expandidos(), resultado.tiempoMs()));
+                    resultado.heuristica(), color, movimientos.size(), resultado.expandidos(), 0, resultado.tiempoMs()));
 
-            // ACTUACIÓN: seguir esperando o, si ya están los 3, compararlos
-            if (resultados.size() < SOLUCIONADORES.size()) {
-                actuacion.mostrarEspera(resultados.size(), SOLUCIONADORES.size());
-                return;
+            // ACTUACIÓN: seguir esperando o, si ya están los 3, preguntar al generador cuántos mensajes hubo
+            actuacion.mostrarEspera(resultados.size(), SOLUCIONADORES.size());
+            if (resultados.size() == SOLUCIONADORES.size()) {
+                actuacion.pedirMensajes(myAgent);
             }
-            esperando = false;
-            List<Ventana.Fila> filas = new ArrayList<>();
-            for (String nombre : SOLUCIONADORES) {
-                filas.add(resultados.get(nombre)); // siempre en el mismo orden
-            }
-            actuacion.mostrarComparacion(filas);
         }
+    }
+
+    /** Con los 3 resultados y los mensajes que contó el generador, muestra la comparación. */
+    private void compararSiEstanTodos(Map<String, Integer> mensajes) {
+        // RAZONAMIENTO: ¿seguimos esperando este puzzle y ya llegaron los 3?
+        if (!esperando || resultados.size() < SOLUCIONADORES.size()) {
+            return; // respuesta de un puzzle anterior
+        }
+        esperando = false;
+        List<Ventana.Fila> filas = new ArrayList<>();
+        for (String nombre : SOLUCIONADORES) { // siempre en el mismo orden
+            int total = mensajes.getOrDefault(nombre, 0) + MENSAJES_RESULTADO;
+            filas.add(resultados.get(nombre).conMensajes(total));
+        }
+
+        // ACTUACIÓN: comparar a los solucionadores
+        actuacion.mostrarComparacion(filas,
+                Razonamiento.fichasFueraDeLugar(tableroResuelto), Razonamiento.distanciaManhattan(tableroResuelto));
     }
 
     private void comenzar() {
@@ -138,6 +158,7 @@ public class AgenteGUI extends GuiAgent {
 
         // ACTUACIÓN: mostrarlo en la ventana y en la terminal
         actuacion.mostrarTablero(tableroActual);
+        mostrarDistancias();
     }
 
     private void tocarCasilla(int casilla) {
@@ -151,6 +172,13 @@ public class AgenteGUI extends GuiAgent {
 
         // ACTUACIÓN: deslizar la ficha hacia el hueco e imprimir el tablero
         actuacion.moverFicha(casilla, hueco, tableroActual);
+        mostrarDistancias();
+    }
+
+    /** Qué tan lejos de la meta está el tablero actual (para elegir retos y llenar la tabla). */
+    private void mostrarDistancias() {
+        actuacion.mostrarDistancias(Razonamiento.fichasFueraDeLugar(tableroActual),
+                Razonamiento.distanciaManhattan(tableroActual));
     }
 
     @Override
