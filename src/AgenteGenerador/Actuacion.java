@@ -55,6 +55,14 @@ public class Actuacion {
         enviar(agente, respuesta, vecinos);
     }
 
+    /** INFORM a la GUI con los mensajes de cada solucionador: "solucionador1=N;solucionador2=N;...". */
+    public void informarMensajes(Agent agente, ACLMessage consulta, String conteo) {
+        ACLMessage respuesta = consulta.createReply(); // conserva el conversation-id "mensajes"
+        respuesta.setPerformative(ACLMessage.INFORM);
+        respuesta.setContent(conteo);
+        agente.send(respuesta);
+    }
+
     /** Imprime cada vecino en una línea para depurar. */
     public void imprimirVecinos(int[][] vecinos) {
         StringBuilder sb = new StringBuilder();

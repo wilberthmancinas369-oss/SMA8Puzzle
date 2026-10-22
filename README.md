@@ -39,6 +39,10 @@ Sistema Multiagente en **JADE** que resuelve el **8-Puzzle**. Los agentes se com
 | Puzzle a animar | Generador → GUI de cada solucionador (`gui1`, `gui2`, `gui3`) | `INFORM` | estado inicial (`int[9]`) |
 | Resultado | Solucionador → `gui` **y** su `guiN` | `INFORM` | `heuristica=...;camino=...;expandidos=...;tiempoMs=...` (tiempo de procesador, con decimales) |
 | Exploración | Generador → GUI | `INFORM` | subgrafo explorado por cada heurística |
+| Conteo de mensajes (al llegar los 3 resultados) | GUI → Generador | `QUERY_REF` (conversation-id `mensajes`) | `"mensajes"` |
+| Conteo de mensajes | Generador → GUI | `INFORM` (conversation-id `mensajes`) | `solucionador1=N;solucionador2=N;solucionador3=N` |
+
+> **Mensajes FIPA por solucionador** = los que intercambió con el generador (1 `INFORM` inicial + un `REQUEST` y un `INFORM` por cada nodo que pidió) + sus 2 `INFORM` de resultado (a `gui` y a su `guiN`). Lo cuenta el generador; los solucionadores no tienen que cambiar nada.
 
 > **Importante para los solucionadores:** el nodo elegido debe ser el mejor de **toda** su lista abierta (todos los nodos recibidos y aún no expandidos), no solo de los 2–4 que acaban de llegar. Si no, el algoritmo se convierte en *hill climbing* y puede atorarse sin llegar a la meta.
 

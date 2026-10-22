@@ -81,12 +81,17 @@ public class Ventana {
     private final StackPane vistaEspera;
     private final StackPane vistaComparacion;
     private final Label conteo = new Label();             // "1 de 3 listos"
-    private final VBox comparacion = new VBox(12);        // barras de la comparación
+    private final VBox comparacion = new VBox(6);         // barras de la comparación
+    private final Label distancias = new Label();         // "4 fichas fuera de lugar · Manhattan 9"
     private final Button resolver;
 
     /** Lo que reportó un solucionador, listo para compararlo. color = índice en COLORES. */
     public record Fila(String solucionador, String heuristica, int color,
-                       int movimientos, int expandidos, double tiempoMs) {
+                       int movimientos, int expandidos, int mensajes, double tiempoMs) {
+
+        public Fila conMensajes(int mensajes) {
+            return new Fila(solucionador, heuristica, color, movimientos, expandidos, mensajes, tiempoMs);
+        }
     }
 
     public Ventana(Runnable onMezclar, Runnable onResolver, IntConsumer onCasilla, Runnable onCerrar) {
@@ -117,7 +122,7 @@ public class Ventana {
 
         vistaTablero = crearTablero(piezas);
         vistaEspera = crearTablero(crearEspera());
-        comparacion.setPadding(new Insets(14));
+        comparacion.setPadding(new Insets(8, 14, 8, 14));
         comparacion.setMaxSize(INTERIOR, INTERIOR);
         comparacion.setAlignment(Pos.CENTER_LEFT);
         vistaComparacion = crearTablero(comparacion);
@@ -163,14 +168,20 @@ public class Ventana {
         resolver.setDisable(true);
     }
 
+    /** Fichas fuera de lugar y distancia Manhattan del tablero que se ve (o que se resolvió). */
+    public void mostrarDistancias(int fuera, int manhattan) {
+        distancias.setText(fuera + " fichas fuera de lugar · distancia Manhattan " + manhattan);
+    }
+
     /**
-     * Compara a los solucionadores en tres grupos de barras (movimientos, expandidos y tiempo).
+     * Compara a los solucionadores en cuatro grupos de barras (movimientos, expandidos, mensajes y tiempo).
      * Cada grupo tiene su propia escala: la barra más larga es el valor más grande de ese grupo.
      */
     public void mostrarComparacion(List<Fila> filas) {
         comparacion.getChildren().setAll(
                 crearGrupo("Movimientos", "%.0f", filas, Fila::movimientos),
                 crearGrupo("Nodos expandidos", "%.0f", filas, Fila::expandidos),
+                crearGrupo("Mensajes FIPA", "%.0f", filas, Fila::mensajes),
                 crearGrupo("Tiempo de procesador", "%.2f ms", filas, Fila::tiempoMs));
         mostrarVista(vistaComparacion);
         resolver.setDisable(true);
@@ -271,7 +282,8 @@ public class Ventana {
                 new Stop(0, Color.web("#fbe9c6")), new Stop(1, Color.web("#d6a96a"))));
         titulo.setEffect(new DropShadow(BlurType.GAUSSIAN, Color.rgb(0, 0, 0, 0.7), 6, 0.3, 0, 2));
 
-        VBox caja = new VBox(2, titulo);
+        distancias.getStyleClass().add("subtitulo");
+        VBox caja = new VBox(2, titulo, distancias);
         caja.setAlignment(Pos.CENTER);
         return caja;
     }
@@ -284,9 +296,8 @@ public class Ventana {
 
         Label texto = new Label("Esperando solucionadores");
         texto.getStyleClass().add("mensaje");
-        conteo.getStyleClass().add("subtitulo");
 
-        VBox caja = new VBox(14, anillo, texto, conteo);
+        VBox caja = new VBox(14, anillo, texto);
         caja.setAlignment(Pos.CENTER);
         caja.setMaxSize(INTERIOR, INTERIOR);
         return caja;
@@ -296,7 +307,7 @@ public class Ventana {
     private VBox crearGrupo(String titulo, String formato, List<Fila> filas, ToDoubleFunction<Fila> valor) {
         Label encabezado = new Label(titulo);
         encabezado.getStyleClass().add("grupo");
-        VBox grupo = new VBox(4, encabezado);
+        VBox grupo = new VBox(2, encabezado);
 
         double maximo = 0;
         for (Fila f : filas) {

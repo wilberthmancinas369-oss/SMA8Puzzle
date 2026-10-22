@@ -26,9 +26,14 @@ public class AgenteGenerador extends Agent {
             @Override
             public void action() {
                 // PERCEPCIÓN: un REQUEST con un nodo (de la GUI o de un solucionador)
+                // o la GUI preguntando cuántos mensajes hubo
                 ACLMessage msg = percepcion.percibir(myAgent);
                 if (msg == null) {
                     block();
+                    return;
+                }
+                if (percepcion.esConsultaMensajes(msg)) {
+                    actuacion.informarMensajes(myAgent, msg, razonamiento.resumenMensajes());
                     return;
                 }
                 int[] nodo = percepcion.leerNodo(msg);
@@ -43,10 +48,12 @@ public class AgenteGenerador extends Agent {
                 // ACTUACIÓN: entregar los vecinos
                 actuacion.imprimirVecinos(vecinos);
                 if (msg.getSender().getLocalName().equals(GUI)) {
+                    razonamiento.reiniciarMensajes(SOLUCIONADORES);
                     actuacion.aceptar(myAgent, msg);                                  // AGREE a la GUI
                     actuacion.entregarASolucionadores(myAgent, SOLUCIONADORES, vecinos); // puzzle nuevo
                     actuacion.avisarGuis(myAgent, GUIS_SOLUCIONADORES, nodo);             // qué puzzle animar
                 } else {
+                    razonamiento.contarPedido(msg.getSender().getLocalName());
                     actuacion.responder(myAgent, msg, vecinos);                       // nodo elegido por un solucionador
                 }
             }

@@ -16,6 +16,8 @@ import java.util.Locale;
  */
 public class Actuacion {
 
+    static final String CONVERSACION_MENSAJES = "mensajes";
+
     private final String nombreAgente;
     private Ventana ventana;
 
@@ -49,11 +51,19 @@ public class Actuacion {
         }
     }
 
+    /** Fichas fuera de lugar y distancia Manhattan del tablero, debajo del título. */
+    public void mostrarDistancias(int fuera, int manhattan) {
+        if (ventana != null) {
+            Platform.runLater(() -> ventana.mostrarDistancias(fuera, manhattan));
+        }
+    }
+
     /** Muestra la comparación en la ventana e imprime una línea por solucionador. */
-    public void mostrarComparacion(List<Ventana.Fila> filas) {
+    public void mostrarComparacion(List<Ventana.Fila> filas, int fuera, int manhattan) {
+        System.out.println("Estado inicial: " + fuera + " fichas fuera de lugar, distancia Manhattan " + manhattan);
         for (Ventana.Fila f : filas) {
             System.out.println(f.solucionador() + " (" + f.heuristica() + "): " + f.movimientos()
-                    + " movimientos, " + f.expandidos() + " expandidos, "
+                    + " movimientos, " + f.expandidos() + " expandidos, " + f.mensajes() + " mensajes FIPA, "
                     + String.format(Locale.ROOT, "%.3f", f.tiempoMs()) + " ms de procesador");
         }
         if (ventana != null) {
@@ -71,6 +81,15 @@ public class Actuacion {
         } catch (IOException e) {
             throw new IllegalStateException("No se pudo empaquetar el tablero", e);
         }
+    }
+
+    /** QUERY_REF al generador: ¿cuántos mensajes intercambió cada solucionador? */
+    public void pedirMensajes(Agent agente) {
+        ACLMessage msg = new ACLMessage(ACLMessage.QUERY_REF);
+        msg.addReceiver(new AID(AgenteGenerador.NOMBRE, AID.ISLOCALNAME));
+        msg.setConversationId(CONVERSACION_MENSAJES); // la respuesta trae el mismo id
+        msg.setContent("mensajes");
+        agente.send(msg);
     }
 
     /** Imprime el tablero en la terminal para depurar. */

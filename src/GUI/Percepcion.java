@@ -4,7 +4,9 @@ import jade.core.Agent;
 import jade.lang.acl.ACLMessage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Percepción del Agente GUI: lee el buzón y reconoce los resultados de los solucionadores.
@@ -19,6 +21,29 @@ public class Percepcion{
 
     public ACLMessage percibir(Agent agente) {
         return agente.receive(); // todo el buzon: lo que no sea un resultado se descarta
+    }
+
+    /**
+     * Respuesta del generador a la consulta de mensajes: "solucionador1=N;solucionador2=N;...".
+     * @return mensajes por solucionador, o null si el mensaje no es esa respuesta
+     */
+    public Map<String, Integer> leerMensajes(ACLMessage msg) {
+        if (msg.getPerformative() != ACLMessage.INFORM || !Actuacion.CONVERSACION_MENSAJES.equals(msg.getConversationId())
+                || msg.getContent() == null) {
+            return null;
+        }
+        Map<String, Integer> mensajes = new HashMap<>();
+        try {
+            for (String campo : msg.getContent().split(";")) {
+                String[] par = campo.split("=", 2);
+                if (par.length == 2) {
+                    mensajes.put(par[0].trim(), Integer.parseInt(par[1].trim()));
+                }
+            }
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return mensajes;
     }
 
     /**

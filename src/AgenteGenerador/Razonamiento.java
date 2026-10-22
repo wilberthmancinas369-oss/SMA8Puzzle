@@ -1,5 +1,8 @@
 package AgenteGenerador;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Razonamiento del Agente Generador: las reglas del 8-Puzzle.
  * Un nodo es un arreglo de 9 enteros leído por filas, con 0 como espacio vacío.
@@ -17,6 +20,34 @@ public class Razonamiento {
             {0, 4, 6},    {1, 3, 5, 7}, {2, 4, 8},
             {3, 7},       {4, 6, 8},    {5, 7}
     };
+
+    /** Mensajes FIPA que cada solucionador ha intercambiado con el generador en el puzzle actual. */
+    private final Map<String, Integer> mensajes = new LinkedHashMap<>();
+
+    /** Puzzle nuevo: cada solucionador empieza con el INFORM que trae los primeros vecinos. */
+    public void reiniciarMensajes(String[] solucionadores) {
+        mensajes.clear();
+        for (String nombre : solucionadores) {
+            mensajes.put(nombre, 1);
+        }
+    }
+
+    /** Un solucionador pidió vecinos: su REQUEST y el INFORM de respuesta. */
+    public void contarPedido(String solucionador) {
+        mensajes.merge(solucionador, 2, Integer::sum);
+    }
+
+    /** "solucionador1=N;solucionador2=N;solucionador3=N" */
+    public String resumenMensajes() {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, Integer> e : mensajes.entrySet()) {
+            if (!sb.isEmpty()) {
+                sb.append(';');
+            }
+            sb.append(e.getKey()).append('=').append(e.getValue());
+        }
+        return sb.toString();
+    }
 
     /** Estados siguientes: mover el hueco a cada casilla vecina (2, 3 o 4 nodos). */
     public int[][] generarVecinos(int[] nodo) {
