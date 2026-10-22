@@ -20,7 +20,7 @@ public class AgenteManhattan extends Agent {
     private final Razonamiento razonamiento = new Razonamiento();
     private Actuacion actuacion;
 
-    @Override
+    @Override   
     protected void setup() {
         actuacion = new Actuacion(this);
 
